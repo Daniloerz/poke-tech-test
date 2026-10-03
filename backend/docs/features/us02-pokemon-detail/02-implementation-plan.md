@@ -46,7 +46,7 @@ No new architectural decision: US01 ADR-001 (layers, out ports) and ADR-002 (cac
 PokemonController.getDetail(idOrName)
   → GetPokemonDetailUseCase.get(idOrName)
       → normalize (trim + lower case)
-      → PokemonCatalogPort.findByName(id)          [cached: pokeapi-pokemon]   empty → PokemonNotFoundException (404)
+      → PokemonCatalogPort.findByIdOrName(id)      [cached: pokeapi-pokemon]   empty → PokemonNotFoundException (404)
       → PokemonCatalogPort.findSpecies(species)    [cached: pokeapi-species]   empty → ExternalServiceException (502)
       → PokemonCatalogPort.findEvolutionChain(id)  [cached: pokeapi-evolution-chains], only if the species has one
       → PokemonDetail
@@ -57,7 +57,7 @@ The three calls are sequential because each one needs data from the previous one
 
 ## Domain (`domain/model`)
 
-- `Pokemon` (existing record) gains: `heightDecimetres`, `artworkUrl`, `stats` (`List<PokemonStat>`), `speciesName`. New methods: `heightM()` (AC-06) and `imageUrl()` (artwork, else sprite; AC-04). The list (US01) keeps using `spriteUrl`.
+- `Pokemon` (existing record) gains: `heightDecimetres`, `artworkUrl`, `stats` (`List<PokemonStat>`), `speciesName`. New methods: `heightM()` (AC-06) and `imageUrl()` (artwork, else sprite; AC-04). The list (US01) keeps using `spriteUrl`. With 10 components, the record uses Lombok `@Builder` (compile time only) so tests and mappers stay readable.
 - `PokemonStat` (record): `name`, `baseStat`.
 - `PokemonSpecies` (record): `name`, `description` (nullable), `evolutionChainId` (nullable `Integer`).
 - `EvolutionNode` (record): `speciesId`, `name`, `imageUrl`, `evolvesTo` (`List<EvolutionNode>`, never null).
@@ -65,7 +65,8 @@ The three calls are sequential because each one needs data from the previous one
 
 ## Application
 
-- `PokemonCatalogPort` gains:
+- `PokemonCatalogPort`:
+  - `findByName` is renamed `findByIdOrName(String idOrName)`, because it now also receives ids (PokeAPI accepts both).
   - `Optional<PokemonSpecies> findSpecies(String speciesName)`
   - `Optional<EvolutionNode> findEvolutionChain(int evolutionChainId)`
 - `PokemonNotFoundException` (`application/exception`): the requested Pokemon does not exist (`404`).
@@ -82,15 +83,16 @@ The three calls are sequential because each one needs data from the previous one
   - Stats: `stats[].stat.name` + `base_stat`.
   - Description (TDR-003): last English entry, whitespace normalized.
   - Evolution tree (TDR-001): recursive mapping of `chain`; the species id is read from the end of the species URL; the node image is built from that id (TDR-002).
-  - Chain id: read from the end of `evolution_chain.url`.
+  - Chain id: read from the end of `evolution_chain.url`. A URL without a numeric id is invalid PokeAPI data → `ExternalServiceException` (`502`).
+- Both mappers declare `componentModel = SPRING` in `@Mapper` (explicit, instead of a global compiler option that produced a build warning).
 - `PokeApiProperties` gains `spriteBaseUrl` (`POKEAPI_SPRITE_BASE_URL`, default `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon`).
 - `CacheConfig`: two new caches (`pokeapi-species`, `pokeapi-evolution-chains`) and a version in the key prefix (TDR-004).
 
-The node image needs the sprite base URL (a property). The client passes it to the mapper as a MapStruct `@Context` parameter (`toEvolutionChain(response, spriteBaseUrl)`). The mapper stays a plain interface, without field injection.
+The node image needs the sprite base URL (a property). The client passes it to the mapper as a normal method parameter (`toEvolutionChain(response, spriteBaseUrl)`). The species, description and evolution mappings are hand-written `default` methods (MapStruct `@Context` is not needed), so the mapper stays an interface without field injection.
 
 ## Interfaces (REST)
 
-- `PokemonController.getDetail`: `@Pattern` + `@Size` on the path variable (built-in method validation, as in US01). OpenAPI annotations for `200`, `400`, `404`, `502`.
+- `PokemonController.getDetail`: one `@Pattern("^[A-Za-z0-9-]{1,50}$")` on the path variable covers characters and length (built-in method validation, as in US01). OpenAPI annotations for `200`, `400`, `404`, `502`.
 - DTOs: `PokemonDetailResponse`, `PokemonStatResponse`, `EvolutionNodeResponse`.
 - `PokemonRestMapper` gains the detail mapping (`heightM()`, `weightKg()`, `imageUrl()` through expressions).
 - `GlobalExceptionHandler`: `PokemonNotFoundException` → `404` with detail `Pokemon not found: <identifier>`. The identifier is already validated, so it is safe to echo.
@@ -115,7 +117,9 @@ The node image needs the sprite base URL (a property). The client passes it to t
 | AC-10 | `GetPokemonDetailUseCaseTest`, `PokemonControllerTest` (`404`) |
 | AC-11 | `PokemonControllerTest` (invalid characters, too long; no use case call) |
 | AC-12 | `PokeApiClientTest` (new endpoints), `GetPokemonDetailUseCaseTest` (missing species), `PokemonControllerTest` (`502`) |
-| AC-13 | Manual check with Docker Compose (Redis keys and response time); automated in backlog item 1 |
+| AC-13 | Manual check with Docker Compose: Eevee cold 1.1 s, cached 22 ms; keys `poke-tech-test::v2::pokeapi-{pokemon,species,evolution-chains}::*`. Automated in backlog item 1 |
+
+Other manual checks with Docker Compose: Eevee (8 branches, clean description, official artwork), `265` Wurmple (nested branches), `deoxys-attack` (species `deoxys`), `missingno` → `404`, `bad_name` → `400`, the US01 list still works after the model change, and a node sprite URL (`.../pokemon/267.png`) answers `200`.
 
 ## Security
 
