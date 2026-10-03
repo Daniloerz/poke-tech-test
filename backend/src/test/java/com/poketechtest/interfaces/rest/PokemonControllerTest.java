@@ -19,7 +19,7 @@ import com.poketechtest.application.usecase.ListPokemonUseCase;
 import com.poketechtest.domain.model.EvolutionNode;
 import com.poketechtest.domain.model.Pokemon;
 import com.poketechtest.domain.model.PokemonDetail;
-import com.poketechtest.domain.model.PokemonPage;
+import com.poketechtest.domain.model.PageResult;
 import com.poketechtest.domain.model.PokemonStat;
 import com.poketechtest.interfaces.rest.mapper.PokemonRestMapperImpl;
 import java.util.List;
@@ -35,6 +35,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(PokemonController.class)
 @Import(PokemonRestMapperImpl.class)
+@WithSecurityConfig
 class PokemonControllerTest {
 
     private static final String POKEMON_PATH = "/api/v1/pokemon";
@@ -107,9 +108,9 @@ class PokemonControllerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"bad_name", "mr.mime", "pika%20chu"})
+    @ValueSource(strings = {"bad_name", "mr.mime", "pika chu"})
     void rejectsAnIdentifierWithInvalidCharacters(String identifier) throws Exception {
-        mockMvc.perform(get(POKEMON_PATH + "/" + identifier))
+        mockMvc.perform(get(POKEMON_PATH + "/{idOrName}", identifier))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors[0].field").value("idOrName"));
 
@@ -144,7 +145,7 @@ class PokemonControllerTest {
                 .weightHectograms(69)
                 .moves(List.of("razor-wind"))
                 .build();
-        when(listPokemonUseCase.list(0, 20)).thenReturn(new PokemonPage(List.of(bulbasaur), 0, 20, 1351));
+        when(listPokemonUseCase.list(0, 20)).thenReturn(new PageResult<>(List.of(bulbasaur), 0, 20, 1351));
 
         mockMvc.perform(get(POKEMON_PATH))
                 .andExpect(status().isOk())
@@ -162,7 +163,7 @@ class PokemonControllerTest {
 
     @Test
     void usesTheRequestedPageAndSize() throws Exception {
-        when(listPokemonUseCase.list(3, 50)).thenReturn(new PokemonPage(List.of(), 3, 50, 1351));
+        when(listPokemonUseCase.list(3, 50)).thenReturn(new PageResult<>(List.of(), 3, 50, 1351));
 
         mockMvc.perform(get(POKEMON_PATH).param("page", "3").param("size", "50"))
                 .andExpect(status().isOk());

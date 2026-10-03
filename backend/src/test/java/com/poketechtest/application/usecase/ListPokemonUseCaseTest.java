@@ -11,7 +11,7 @@ import com.poketechtest.application.exception.ExternalServiceException;
 import com.poketechtest.application.port.out.PokemonCatalogPage;
 import com.poketechtest.application.port.out.PokemonCatalogPort;
 import com.poketechtest.domain.model.Pokemon;
-import com.poketechtest.domain.model.PokemonPage;
+import com.poketechtest.domain.model.PageResult;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -51,7 +51,7 @@ class ListPokemonUseCaseTest {
         when(pokemonCatalogPort.findByIdOrName("pidgey")).thenReturn(Optional.of(pokemon(16, "pidgey")));
         when(pokemonCatalogPort.findByIdOrName("rattata")).thenReturn(Optional.of(pokemon(19, "rattata")));
 
-        PokemonPage result = listPokemonUseCase.list(20, 2);
+        PageResult<Pokemon> result = listPokemonUseCase.list(20, 2);
 
         assertThat(result.items()).extracting(Pokemon::name).containsExactly("pidgey", "rattata");
         assertThat(result.page()).isEqualTo(20);
@@ -69,7 +69,7 @@ class ListPokemonUseCaseTest {
         when(pokemonCatalogPort.findByIdOrName("ivysaur")).thenReturn(Optional.of(pokemon(2, "ivysaur")));
         when(pokemonCatalogPort.findByIdOrName("venusaur")).thenReturn(Optional.of(pokemon(3, "venusaur")));
 
-        PokemonPage result = listPokemonUseCase.list(0, 3);
+        PageResult<Pokemon> result = listPokemonUseCase.list(0, 3);
 
         assertThat(result.items()).extracting(Pokemon::id).containsExactly(1, 2, 3);
     }
@@ -78,7 +78,7 @@ class ListPokemonUseCaseTest {
     void returnsAnEmptyPageAfterTheLastOne() {
         when(pokemonCatalogPort.listPage(100_000, 20)).thenReturn(new PokemonCatalogPage(List.of(), TOTAL_COUNT));
 
-        PokemonPage result = listPokemonUseCase.list(5_000, 20);
+        PageResult<Pokemon> result = listPokemonUseCase.list(5_000, 20);
 
         assertThat(result.items()).isEmpty();
         assertThat(result.totalElements()).isEqualTo(TOTAL_COUNT);
@@ -90,7 +90,7 @@ class ListPokemonUseCaseTest {
         long expectedOffset = (long) Integer.MAX_VALUE * 50;
         when(pokemonCatalogPort.listPage(expectedOffset, 50)).thenReturn(new PokemonCatalogPage(List.of(), TOTAL_COUNT));
 
-        PokemonPage result = listPokemonUseCase.list(Integer.MAX_VALUE, 50);
+        PageResult<Pokemon> result = listPokemonUseCase.list(Integer.MAX_VALUE, 50);
 
         assertThat(result.items()).isEmpty();
     }

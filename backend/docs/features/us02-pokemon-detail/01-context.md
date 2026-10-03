@@ -33,7 +33,7 @@ This feature reuses the PokeAPI client and the Redis cache of US01.
 | ID | Criterion |
 |---|---|
 | AC-01 | `GET /api/v1/pokemon/{idOrName}` returns `200` with the detail. It accepts the PokeAPI id (`133`) or name (`eevee`). |
-| AC-02 | The identifier is case-insensitive and trimmed: `Eevee` returns the same Pokemon as `eevee`. |
+| AC-02 | The identifier is case-insensitive: `Eevee` returns the same Pokemon as `eevee`. (Spaces are not allowed by AC-11, so the identifier never needs trimming at the API level.) |
 | AC-03 | The detail has `id`, `name`, `imageUrl`, `types`, `heightM`, `weightKg`, `stats`, `description` and `evolutionChain`. |
 | AC-04 | `imageUrl` is the official artwork. If PokeAPI has no artwork, it is the sprite; if there is neither, it is `null`. |
 | AC-05 | `stats` has the 6 base stats in PokeAPI order, each with `name` and `baseStat`. |

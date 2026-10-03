@@ -17,9 +17,6 @@ public record Pokemon(
         List<PokemonStat> stats,
         List<String> moves) {
 
-    // PokeAPI gives height in decimetres and weight in hectograms: one decimal place in metres and kilograms.
-    private static final int ONE_DECIMAL_SCALE = 1;
-
     public Pokemon {
         types = types == null ? List.of() : List.copyOf(types);
         stats = stats == null ? List.of() : List.copyOf(stats);
@@ -27,11 +24,11 @@ public record Pokemon(
     }
 
     public BigDecimal weightKg() {
-        return BigDecimal.valueOf(weightHectograms, ONE_DECIMAL_SCALE);
+        return Measurements.fromTenths(weightHectograms);
     }
 
     public BigDecimal heightM() {
-        return BigDecimal.valueOf(heightDecimetres, ONE_DECIMAL_SCALE);
+        return Measurements.fromTenths(heightDecimetres);
     }
 
     public String imageUrl() {

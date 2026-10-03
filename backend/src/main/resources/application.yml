@@ -11,6 +11,10 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+  jackson:
+    deserialization:
+      # Strict request bodies: an unknown field is a client mistake, not something to ignore (US04 TDR-002).
+      fail-on-unknown-properties: true
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
   data:
@@ -30,6 +34,13 @@ pokeapi:
   read-timeout: ${POKEAPI_READ_TIMEOUT:5s}
   cache-ttl: ${POKEAPI_CACHE_TTL:24h}
   sprite-base-url: ${POKEAPI_SPRITE_BASE_URL:https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon}
+
+security:
+  jwt:
+    # No default: the application does not start without a secret of at least 32 characters.
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION:1h}
+    issuer: poke-tech-test
 
 management:
   endpoints:

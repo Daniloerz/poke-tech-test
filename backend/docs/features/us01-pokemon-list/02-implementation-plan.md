@@ -57,7 +57,7 @@ Error response (`400`, `502`, `500`), RFC 9457 Problem Details (see TDR-004):
 
 ```text
 com.poketechtest
-├── domain/model/                 Pokemon, PokemonPage                 (no framework code)
+├── domain/model/                 Pokemon, PageResult<T>               (no framework code)
 ├── application/
 │   ├── port/out/                 PokemonCatalogPort (interface), PokemonCatalogPage
 │   ├── exception/                ExternalServiceException
@@ -79,14 +79,14 @@ PokemonController
       → PokemonCatalogPort.listPage(offset, limit)          [cached: pokeapi-pages]
       → for each name, in parallel:
           PokemonCatalogPort.findByIdOrName(name)           [cached: pokeapi-pokemon]
-      → PokemonPage (original order)
+      → PageResult<Pokemon> (original order)
   → PokemonRestMapper → PageResponse<PokemonSummaryResponse>
 ```
 
 ## Domain
 
 - `Pokemon` (record): `id`, `name`, `spriteUrl`, `types`, `weightHectograms`, `moves`. Method `weightKg()` converts to kilograms with `BigDecimal` (AC-03). Null lists become empty, immutable lists. US02 will add fields to this record.
-- `PokemonPage` (record): `items`, `page`, `size`, `totalElements`, and `totalPages()` computed from them. It rejects `page < 0` and `size < 1`.
+- `PageResult<T>` (generic record; it was `PokemonPage` until US04 TDR-003): `items`, `page`, `size`, `totalElements`, and `totalPages()` computed from them. It rejects `page < 0` and `size < 1`.
 
 ## Application
 
@@ -155,10 +155,10 @@ PokemonController
 | AC-01 | `ListPokemonUseCaseTest` (offset, order), `PokemonControllerTest` | First 20 Pokemon in PokeAPI order |
 | AC-02 | `PokeApiMapperTest`, `PokeApiClientTest`, `PokemonControllerTest` (JSON shape) | bulbasaur with all fields |
 | AC-03 | `PokemonTest` | `weightKg: 6.9` |
-| AC-04 | `PokemonPageTest`, `PokemonControllerTest` | `totalPages: 68` |
+| AC-04 | `PageResultTest`, `PokemonControllerTest` | `totalPages: 68` |
 | AC-05 | `PokemonControllerTest` (defaults) | — |
 | AC-06 | `PokemonControllerTest` (`size=51`, `page=-1`, `size=0`, `page=abc`) | `400` with `errors` |
-| AC-07 | `PokemonPageTest`, `ListPokemonUseCaseTest` | `page=9999` → empty `content` |
+| AC-07 | `PageResultTest`, `ListPokemonUseCaseTest` | `page=9999` → empty `content` |
 | AC-08 | `PokeApiClientTest` (5xx, timeout, invalid and empty body), `ListPokemonUseCaseTest`, `PokemonControllerTest` (`502`, `500`) | — |
 | AC-09 | `PokeApiMapperTest` (null sprite and lists) | — |
 | AC-10 | — (needs Redis; backlog item 1) | Cold page 1.2 s, cached page 27 ms; 21 keys with 24 h TTL |

@@ -2,9 +2,10 @@ package com.poketechtest.domain.model;
 
 import java.util.List;
 
-public record PokemonPage(List<Pokemon> items, int page, int size, long totalElements) {
+/** One page of results with the data needed to paginate. */
+public record PageResult<T>(List<T> items, int page, int size, long totalElements) {
 
-    public PokemonPage {
+    public PageResult {
         if (page < 0) {
             throw new IllegalArgumentException("page must be zero or positive");
         }

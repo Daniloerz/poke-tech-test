@@ -13,7 +13,7 @@
 4.3. **Create propio:** primero solo create vía sincronización; la creación de Pokémon propios queda como extra opcional al final.
 5. **US01:** "categoría" = `types` de PokeAPI y "skills" = `moves`.
 6. **Autenticación:** solo usuario autenticado (JWT), sin roles por ahora. Las autorizaciones por rol quedan pendientes según el tiempo.
-7. **US03:** sincronización bajo demanda de un Pokémon por id o nombre; 409 si ya existe localmente.
+7. **US03:** sincronización bajo demanda de un Pokémon por id o nombre; 409 si ya existe localmente. Endpoint aprobado en F4: `POST /api/v1/local-pokemon` con body `{"idOrName": "..."}` (no la variable en la ruta; US03 TDR-001). `types` y `tags` se guardan como `TEXT[]`; sin FK a `app_user`.
 8. **Sección GenAI del reto:** pendiente; no se hace hasta que el usuario lo indique.
 9. **Git:** el remoto `origin` ya existe; no hacer push sin autorización explícita.
 10. **Idioma de la documentación del proyecto:** todo en inglés, títulos incluidos (README, docs de features, ADR/TDR/BDDR, comentarios SQL, `SUB-AGENTS.md`). Las plantillas de este documento se traducen así: Context / Problem, Options considered, Option A/B/C, Decision, Rationale, Consequences. Los nombres de archivo (`01-context.md`, etc.) no cambian.
@@ -31,6 +31,7 @@ Lista viva de lo que se ha dejado para después. Añadir cada nuevo pendiente aq
 4. **Sección GenAI del reto** (prompt de la API de tareas, muestra de código, validación).
 5. **Frontend completo**, una vez terminado el backend.
 6. **Verificar el arranque local del backend desde el IDE** (fuera de Docker). El agente no pudo probarlo por una limitación de su sandbox; con Docker Compose sí está verificado.
+7. **Seed de demo solo en local:** usar un `context: demo` de Liquibase para los changesets de datos de demo (hoy se aplican en todos los entornos; ver BDDR-006).
 
 # 1. Rol
 

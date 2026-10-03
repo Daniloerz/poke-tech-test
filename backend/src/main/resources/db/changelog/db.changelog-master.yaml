@@ -1,2 +1,10 @@
 # SQL changesets live in db/changelog/changes and are included here in order.
-databaseChangeLog: []
+databaseChangeLog:
+  - include:
+      file: db/changelog/changes/20261003-01-create-app-user.sql
+  - include:
+      file: db/changelog/changes/20261003-02-seed-app-user.sql
+  - include:
+      file: db/changelog/changes/20261003-03-create-local-pokemon.sql
+  - include:
+      file: db/changelog/changes/20261003-04-seed-local-pokemon.sql

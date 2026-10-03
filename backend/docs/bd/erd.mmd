@@ -1,0 +1,22 @@
+erDiagram
+    APP_USER {
+        BIGINT id PK "identity"
+        VARCHAR(30) username UK "lower case"
+        VARCHAR(100) password_hash "BCrypt"
+        TIMESTAMPTZ created_at "default now()"
+    }
+
+    LOCAL_POKEMON {
+        BIGINT id PK "identity"
+        INTEGER poke_api_id UK "PokeAPI id, > 0"
+        VARCHAR(100) name "PokeAPI snapshot"
+        VARCHAR(500) sprite_url "PokeAPI snapshot, nullable"
+        TEXT_ARRAY types "PokeAPI snapshot, default {}"
+        INTEGER height_decimetres "PokeAPI snapshot, >= 0"
+        INTEGER weight_hectograms "PokeAPI snapshot, >= 0"
+        VARCHAR(100) localized_name "proprietary, nullable"
+        VARCHAR(100) region "proprietary, nullable"
+        TEXT_ARRAY tags "proprietary, default {}"
+        TIMESTAMPTZ synced_at "default now()"
+        TIMESTAMPTZ updated_at "default now()"
+    }

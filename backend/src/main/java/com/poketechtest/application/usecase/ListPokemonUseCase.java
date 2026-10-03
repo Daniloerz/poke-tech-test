@@ -4,7 +4,7 @@ import com.poketechtest.application.exception.ExternalServiceException;
 import com.poketechtest.application.port.out.PokemonCatalogPage;
 import com.poketechtest.application.port.out.PokemonCatalogPort;
 import com.poketechtest.domain.model.Pokemon;
-import com.poketechtest.domain.model.PokemonPage;
+import com.poketechtest.domain.model.PageResult;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -21,7 +21,7 @@ public class ListPokemonUseCase {
     private final PokemonCatalogPort pokemonCatalogPort;
     private final ExecutorService virtualThreadExecutor;
 
-    public PokemonPage list(int page, int size) {
+    public PageResult<Pokemon> list(int page, int size) {
         long offset = (long) page * size;
         PokemonCatalogPage catalogPage = pokemonCatalogPort.listPage(offset, size);
         log.debug("Fetching {} Pokemon for page {} (size {})", catalogPage.names().size(), page, size);
@@ -32,7 +32,7 @@ public class ListPokemonUseCase {
                 .toList();
         List<Pokemon> items = futures.stream().map(this::join).toList();
 
-        return new PokemonPage(items, page, size, catalogPage.totalCount());
+        return new PageResult<>(items, page, size, catalogPage.totalCount());
     }
 
     private Pokemon findListedPokemon(String name) {
