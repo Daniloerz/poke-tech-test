@@ -3,7 +3,7 @@ package com.poketechtest.interfaces.rest.mapper;
 import com.poketechtest.domain.model.EvolutionNode;
 import com.poketechtest.domain.model.Pokemon;
 import com.poketechtest.domain.model.PokemonDetail;
-import com.poketechtest.domain.model.PokemonPage;
+import com.poketechtest.domain.model.PageResult;
 import com.poketechtest.domain.model.PokemonStat;
 import com.poketechtest.interfaces.rest.dto.EvolutionNodeResponse;
 import com.poketechtest.interfaces.rest.dto.PageResponse;
@@ -37,7 +37,7 @@ public interface PokemonRestMapper {
     @Mapping(target = "id", source = "speciesId")
     EvolutionNodeResponse toEvolutionNodeResponse(EvolutionNode node);
 
-    default PageResponse<PokemonSummaryResponse> toPageResponse(PokemonPage pokemonPage) {
+    default PageResponse<PokemonSummaryResponse> toPageResponse(PageResult<Pokemon> pokemonPage) {
         return new PageResponse<>(
                 toSummaryResponses(pokemonPage.items()),
                 pokemonPage.page(),
