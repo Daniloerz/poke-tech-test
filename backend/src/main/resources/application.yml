@@ -1,0 +1,42 @@
+# Non-sensitive values have local defaults (backend run from the IDE against the Compose services).
+# Secrets have no default: the application fails at startup if they are missing.
+spring:
+  application:
+    name: poke-tech-test-backend
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5433/pokemon}
+    username: ${DATABASE_USER:pokemon}
+    password: ${DATABASE_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6380}
+      # Short timeouts: if Redis is down, requests fall back to PokeAPI quickly.
+      timeout: 1s
+      connect-timeout: 1s
+
+server:
+  port: ${SERVER_PORT:8080}
+
+pokeapi:
+  base-url: ${POKEAPI_BASE_URL:https://pokeapi.co/api/v2}
+  connect-timeout: ${POKEAPI_CONNECT_TIMEOUT:3s}
+  read-timeout: ${POKEAPI_READ_TIMEOUT:5s}
+  cache-ttl: ${POKEAPI_CACHE_TTL:24h}
+  sprite-base-url: ${POKEAPI_SPRITE_BASE_URL:https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  health:
+    # Redis is only a cache; the application stays healthy without it.
+    redis:
+      enabled: false

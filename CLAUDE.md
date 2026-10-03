@@ -16,6 +16,21 @@
 7. **US03:** sincronización bajo demanda de un Pokémon por id o nombre; 409 si ya existe localmente.
 8. **Sección GenAI del reto:** pendiente; no se hace hasta que el usuario lo indique.
 9. **Git:** el remoto `origin` ya existe; no hacer push sin autorización explícita.
+10. **Idioma de la documentación del proyecto:** todo en inglés, títulos incluidos (README, docs de features, ADR/TDR/BDDR, comentarios SQL, `SUB-AGENTS.md`). Las plantillas de este documento se traducen así: Context / Problem, Options considered, Option A/B/C, Decision, Rationale, Consequences. Los nombres de archivo (`01-context.md`, etc.) no cambian.
+11. **Comentarios y commits en inglés:** todo comentario de código/configuración y todo commit message se escribe en inglés. El cuerpo del commit es opcional y tiene **máximo 3 bullets**, cada uno con una oración corta. Se mantiene la línea `Co-Authored-By`.
+12. **Testing:** por ahora solo tests unitarios con JUnit 5 + Mockito. No usar Testcontainers ni tests que necesiten Docker, BD o Redis reales (ver Pendientes). Esto prevalece sobre las secciones 17, 25 y 26 en lo relativo a tests de integración.
+13. **Documentación viva durante la implementación:** si al implementar se descubre un bloqueo, algo que no se tuvo en cuenta o un camino mejor, y el código se aparta de lo documentado, se actualizan **en ese mismo momento** los documentos afectados (`01-context.md`, `02-implementation-plan.md`, ADR, TDR, BDDR, README, este `CLAUDE.md`): cambiar, añadir o eliminar detalles. Nunca se deja una diferencia entre el código y la documentación para "después". Si el cambio afecta a una decisión ya aprobada por el usuario (contrato, arquitectura, alcance), se informa en el resumen de la feature.
+
+## Pendientes (backlog)
+
+Lista viva de lo que se ha dejado para después. Añadir cada nuevo pendiente aquí y quitarlo (o marcarlo hecho) cuando se resuelva.
+
+1. **Tests de integración con Testcontainers** (PostgreSQL y Redis). Incluye verificar automáticamente el cache hit de US01 (AC-10), que por ahora se comprueba a mano con Docker Compose. Nota de entorno: Docker vive en WSL y desde Windows solo responde en `tcp://[::1]:2375`; el `DOCKER_HOST` global del usuario apunta a `127.0.0.1` y no funciona.
+2. **Creación de Pokémon propios mediante `POST`** (sin pasar por la sincronización con PokeAPI).
+3. **Autorización por roles** (por ahora solo usuario autenticado).
+4. **Sección GenAI del reto** (prompt de la API de tareas, muestra de código, validación).
+5. **Frontend completo**, una vez terminado el backend.
+6. **Verificar el arranque local del backend desde el IDE** (fuera de Docker). El agente no pudo probarlo por una limitación de su sandbox; con Docker Compose sí está verificado.
 
 # 1. Rol
 

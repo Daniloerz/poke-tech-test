@@ -1,0 +1,7 @@
+target/
+docs/
+.idea/
+*.iml
+.vscode/
+Dockerfile
+.dockerignore
