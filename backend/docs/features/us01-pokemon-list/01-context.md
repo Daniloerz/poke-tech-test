@@ -36,7 +36,7 @@ This feature also builds the PokeAPI client that US02 will reuse.
 | AC-08 | If PokeAPI fails (5xx, timeout, connection error) for the list or for any Pokemon of the page, the API returns `502` with the common error format, without internal details. |
 | AC-09 | A Pokemon without a sprite in PokeAPI is returned with `spriteUrl: null`; it does not break the page. |
 | AC-10 | PokeAPI responses are cached in Redis. A second request for the same page does not call PokeAPI again while the cache entry is valid. |
-| AC-11 | If Redis is not available, the list still works (it calls PokeAPI directly) and a warning is logged. |
+| AC-11 | If Redis is not available, the list still works (it calls PokeAPI directly), a warning is logged, and `/actuator/health` stays `UP`. |
 
 ## Business rules
 

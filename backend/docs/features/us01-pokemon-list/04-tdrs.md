@@ -29,8 +29,8 @@ It is the standard client for blocking code in current Spring. It needs no extra
 
 ### Consequences
 
-- Timeouts are set on the request factory from configuration.
-- `RestClientException` is translated to a business exception in the adapter.
+- The request factory is `JdkClientHttpRequestFactory` (JDK `HttpClient`, no extra dependency): connection timeout on the `HttpClient`, read timeout on the factory, both from configuration.
+- `RestClientException` is translated to a business exception in the adapter; a 404 becomes `Optional.empty()`.
 
 ---
 
@@ -87,7 +87,7 @@ We use the Spring cache abstraction (`@Cacheable`) with Redis. We have to choose
 
 ### Decision
 
-Option B. Each cache uses a JSON serializer typed to its value class, so no type information is stored inside the JSON.
+Option B. Each cache uses a JSON serializer typed to its value class (`JacksonJsonRedisSerializer`, Jackson 3), so no type information is stored inside the JSON. The error handler is Spring's `LoggingCacheErrorHandler`, which logs a `WARN` and lets the call continue; no custom class is needed.
 
 ### Rationale
 
@@ -96,7 +96,10 @@ Readable values help debugging and the demo. The TTL avoids old data forever. Th
 ### Consequences
 
 - If a cached class changes its fields, old entries may fail to read. The error handler treats this as a cache miss, and the TTL removes them.
-- Keys use a prefix (`poke-tech-test::`) so they do not mix with other data in a shared Redis.
+- Keys use a prefix (`poke-tech-test::`) so they do not mix with other data in a shared Redis. Only the two declared caches exist (`disableCreateOnMissingCache`), so a wrong cache name fails fast.
+- A 404 (`Optional.empty()`) is not cached, so a Pokemon added later to PokeAPI is found.
+- Redis timeouts are 1 s, so a request without Redis is slower but still answers.
+- The Redis health indicator is disabled: Redis is optional, so `/actuator/health` (used by the Docker healthcheck) must not go `DOWN` when it fails.
 
 ---
 
