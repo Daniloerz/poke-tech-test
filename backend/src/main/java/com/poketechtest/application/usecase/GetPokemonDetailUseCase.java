@@ -6,9 +6,8 @@ import com.poketechtest.application.port.out.PokemonCatalogPort;
 import com.poketechtest.domain.model.EvolutionNode;
 import com.poketechtest.domain.model.Pokemon;
 import com.poketechtest.domain.model.PokemonDetail;
+import com.poketechtest.domain.model.PokemonIdentifier;
 import com.poketechtest.domain.model.PokemonSpecies;
-import java.util.Locale;
-import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +21,7 @@ public class GetPokemonDetailUseCase {
     private final PokemonCatalogPort pokemonCatalogPort;
 
     public PokemonDetail get(String idOrName) {
-        String identifier = Objects.requireNonNull(idOrName, "idOrName must not be null").trim().toLowerCase(Locale.ROOT);
+        String identifier = PokemonIdentifier.normalize(idOrName);
 
         Pokemon pokemon = pokemonCatalogPort.findByIdOrName(identifier)
                 .orElseThrow(() -> new PokemonNotFoundException(identifier));

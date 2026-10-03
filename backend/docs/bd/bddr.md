@@ -184,3 +184,100 @@ One migration mechanism for schema and data, reproducible and easy to review.
 
 - The demo passwords are public (README). They are demo credentials for a local project, not secrets.
 - To change a demo password, add a new changeset; never edit an applied one (Liquibase checksums).
+
+---
+
+## BDDR-007 — Storage of `types` and `tags` (lists of strings)
+
+### Context / Problem
+
+A local Pokemon has two lists of short strings: `types` (PokeAPI snapshot, read-only) and `tags` (proprietary labels, edited in US04). They are always read and written together with their Pokemon.
+
+### Options considered
+
+#### Option A — Child tables (`local_pokemon_type`, `local_pokemon_tag`) mapped with `@ElementCollection`
+- Classic normalized model; a tag can be searched with a plain join.
+- Two more tables; listing Pokemon (US04) needs extra queries or a fetch strategy to avoid N+1; every update deletes and re-inserts the rows.
+
+#### Option B — Catalog table of types + join table
+- Full normalization; types become a controlled vocabulary.
+- The type list belongs to PokeAPI and we only copy it; a catalog would duplicate PokeAPI data and add a third table for no business rule.
+
+#### Option C — PostgreSQL `TEXT[]` columns
+- One row per Pokemon, one query to read it, no N+1, simple updates. Hibernate maps `List<String>` to `text[]` natively (`@JdbcTypeCode(SqlTypes.ARRAY)`).
+- PostgreSQL-specific; searching by tag later needs `ANY`/`@>` and a GIN index.
+
+### Decision
+
+Option C.
+
+### Rationale
+
+The lists have no own identity and no own attributes; they are values of the Pokemon. An array keeps the model and the queries simple, and the project only targets PostgreSQL.
+
+### Consequences
+
+- `NOT NULL DEFAULT '{}'`: an empty list is `{}`, never `NULL`.
+- The limits for tags (how many, how long) are validated by the application in US04.
+- If tag search is needed later: `CREATE INDEX ... USING GIN (tags)`.
+
+---
+
+## BDDR-008 — One local record per PokeAPI Pokemon
+
+### Context / Problem
+
+US03 must not create two local copies of the same Pokemon (AC-04), also when two requests arrive at the same time.
+
+### Options considered
+
+#### Option A — Check in the application only
+- Simple.
+- Two concurrent requests can both pass the check and insert twice.
+
+#### Option B — Unique constraint on `poke_api_id` (plus the application check for a clear `409`)
+- The database guarantees the rule; the application check gives a nice error in the normal case.
+
+### Decision
+
+Option B, with `CHECK (poke_api_id > 0)` and non-negative measures as basic data integrity.
+
+### Rationale
+
+Uniqueness is only reliable when the database enforces it.
+
+### Consequences
+
+- The unique constraint also creates the index for `findByPokeApiId`; no extra index.
+- The PokeAPI `name` is not unique in the table: PokeAPI already guarantees it, and the future "own Pokemon" (backlog) may use names freely.
+
+---
+
+## BDDR-009 — Proprietary and audit columns
+
+### Context / Problem
+
+The exercise asks for a local copy that makes it easy to add proprietary fields: localized name, geographic metadata, internal tags. The record also needs audit times.
+
+### Options considered
+
+#### Option A — Generic key/value table (`local_pokemon_attribute(name, value)`)
+- Any new field without a migration.
+- No types, no constraints, complex queries; hard to validate and to explain.
+
+#### Option B — Explicit nullable columns (`localized_name`, `region`, `tags`)
+- Clear schema, validation per field, simple queries. A new field needs a migration (normal with Liquibase).
+
+### Decision
+
+Option B. Free-text `VARCHAR(100)` for `localized_name` and `region`; `synced_at` (database default) and `updated_at` (set by Hibernate on insert and update).
+
+### Rationale
+
+The fields are known; explicit columns are simpler and safer than a generic model.
+
+### Consequences
+
+- The proprietary columns are nullable: a freshly synchronized Pokemon has none of them.
+- `region` is free text, not a foreign key to a region table, because the exercise does not define a list of regions.
+- Both audit times come from the database clock (`now()` for `synced_at`, `@UpdateTimestamp(source = DB)` for `updated_at`), so they can be compared safely.
