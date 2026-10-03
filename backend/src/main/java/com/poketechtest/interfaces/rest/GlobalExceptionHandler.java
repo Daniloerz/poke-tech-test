@@ -2,6 +2,8 @@ package com.poketechtest.interfaces.rest;
 
 import com.poketechtest.application.exception.ExternalServiceException;
 import com.poketechtest.application.exception.InvalidCredentialsException;
+import com.poketechtest.application.exception.LocalPokemonNotFoundException;
+import com.poketechtest.application.exception.PokemonAlreadySyncedException;
 import com.poketechtest.application.exception.PokemonNotFoundException;
 import com.poketechtest.application.exception.UserNotFoundException;
 import com.poketechtest.application.exception.UsernameAlreadyExistsException;
@@ -49,6 +51,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(PokemonNotFoundException.class)
     public ProblemDetail handlePokemonNotFound(PokemonNotFoundException exception) {
         // The identifier was validated by the controller, so it is safe to echo it.
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(PokemonAlreadySyncedException.class)
+    public ProblemDetail handlePokemonAlreadySynced(PokemonAlreadySyncedException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    @ExceptionHandler(LocalPokemonNotFoundException.class)
+    public ProblemDetail handleLocalPokemonNotFound(LocalPokemonNotFoundException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
     }
 

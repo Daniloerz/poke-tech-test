@@ -4,3 +4,7 @@ databaseChangeLog:
       file: db/changelog/changes/20261003-01-create-app-user.sql
   - include:
       file: db/changelog/changes/20261003-02-seed-app-user.sql
+  - include:
+      file: db/changelog/changes/20261003-03-create-local-pokemon.sql
+  - include:
+      file: db/changelog/changes/20261003-04-seed-local-pokemon.sql
