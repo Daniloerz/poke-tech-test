@@ -31,6 +31,13 @@ pokeapi:
   cache-ttl: ${POKEAPI_CACHE_TTL:24h}
   sprite-base-url: ${POKEAPI_SPRITE_BASE_URL:https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon}
 
+security:
+  jwt:
+    # No default: the application does not start without a secret of at least 32 characters.
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION:1h}
+    issuer: poke-tech-test
+
 management:
   endpoints:
     web:

@@ -35,6 +35,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(PokemonController.class)
 @Import(PokemonRestMapperImpl.class)
+@WithSecurityConfig
 class PokemonControllerTest {
 
     private static final String POKEMON_PATH = "/api/v1/pokemon";
@@ -107,9 +108,9 @@ class PokemonControllerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"bad_name", "mr.mime", "pika%20chu"})
+    @ValueSource(strings = {"bad_name", "mr.mime", "pika chu"})
     void rejectsAnIdentifierWithInvalidCharacters(String identifier) throws Exception {
-        mockMvc.perform(get(POKEMON_PATH + "/" + identifier))
+        mockMvc.perform(get(POKEMON_PATH + "/{idOrName}", identifier))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors[0].field").value("idOrName"));
 
