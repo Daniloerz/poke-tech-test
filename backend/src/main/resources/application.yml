@@ -1,0 +1,24 @@
+# Non-sensitive values have local defaults (backend run from the IDE against the Compose services).
+# Secrets have no default: the application fails at startup if they are missing.
+spring:
+  application:
+    name: poke-tech-test-backend
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5433/pokemon}
+    username: ${DATABASE_USER:pokemon}
+    password: ${DATABASE_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

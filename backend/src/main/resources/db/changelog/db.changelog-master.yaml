@@ -1,0 +1,2 @@
+# SQL changesets live in db/changelog/changes and are included here in order.
+databaseChangeLog: []
