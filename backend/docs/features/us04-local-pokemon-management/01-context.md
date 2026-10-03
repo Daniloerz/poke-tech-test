@@ -48,7 +48,7 @@ CRUD on `local_pokemon`:
 | ID | Criterion |
 |---|---|
 | AC-03 | Body `{"localizedName": "Pikachu", "region": "Kanto", "tags": ["electric-mouse", "mascot"]}` replaces the three proprietary fields and returns `200` with the updated record. |
-| AC-04 | `updatedAt` changes; `syncedAt` and the PokeAPI snapshot (`name`, `types`, measures, sprite) never change. |
+| AC-04 | `updatedAt` changes when at least one value changes (a `PUT` with the same values writes nothing); `syncedAt` and the PokeAPI snapshot (`name`, `types`, measures, sprite) never change. |
 | AC-05 | `localizedName` and `region` are optional: `null` (or missing) clears them. When present they are trimmed and must have 1 to 100 characters (not blank). |
 | AC-06 | `tags` is required (use `[]` to clear). At most 10 tags; each tag has 1 to 30 letters, digits or hyphens. Tags are stored trimmed, in lower case and without duplicates, keeping the first order. |
 | AC-07 | A body with any other field (for example `name` or `weightKg`) returns `400` naming the field (`is not a recognized field`): the PokeAPI snapshot is not editable, and silently ignoring the field would hide a client mistake. |
@@ -85,5 +85,6 @@ CRUD on `local_pokemon`:
 
 - `PUT` replaces the whole editable part (the three proprietary fields), so the request is simple and predictable (TDR-001).
 - No optimistic locking: if two users edit the same record at the same time, the last write wins. Acceptable for this exercise; listed as a risk.
+- If a record is deleted while another request updates it, the update returns `404` (the adapter maps Hibernate's stale-row error).
 - Delete is a hard delete; the record can be recreated by synchronizing again.
 - No filtering or search in the list (not asked).

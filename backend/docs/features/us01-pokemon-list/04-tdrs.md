@@ -96,7 +96,7 @@ Readable values help debugging and the demo. The TTL avoids old data forever. Th
 ### Consequences
 
 - If a cached class changes its fields, old entries may fail to read. The error handler treats this as a cache miss, and the TTL removes them.
-- Keys use a prefix (`poke-tech-test::`) so they do not mix with other data in a shared Redis. Only the two declared caches exist (`disableCreateOnMissingCache`), so a wrong cache name fails fast.
+- Keys use a prefix (`poke-tech-test::`) so they do not mix with other data in a shared Redis. Only the declared caches exist (`disableCreateOnMissingCache`), so a wrong cache name fails fast.
 - A 404 (`Optional.empty()`) is not cached, so a Pokemon added later to PokeAPI is found.
 - Redis timeouts are 1 s, so a request without Redis is slower but still answers.
 - The Redis health indicator is disabled: Redis is optional, so `/actuator/health` (used by the Docker healthcheck) must not go `DOWN` when it fails.

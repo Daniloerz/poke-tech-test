@@ -38,7 +38,7 @@ This feature creates the first database table (`app_user`), the first Liquibase 
 | AC-01 | A valid `{username, password}` creates the user and returns `201` with `{id, username, createdAt}` and a `Location` header. The password is never returned. |
 | AC-02 | The username is trimmed and stored in lower case. `Ash` and `ash` are the same user. |
 | AC-03 | The username must have 3 to 30 characters: letters, digits, `.`, `_` or `-`. Otherwise `400` with `errors`. |
-| AC-04 | The password must have 8 to 72 characters. Otherwise `400` with `errors`. |
+| AC-04 | The password must have at least 8 characters and at most 72 bytes in UTF-8 (the BCrypt limit; `ñ` counts as 2 bytes). Otherwise `400` with `errors`. |
 | AC-05 | A missing field or a malformed JSON body returns `400`. |
 | AC-06 | A username that already exists returns `409`. |
 | AC-07 | The password is stored as a BCrypt hash, never in plain text. |
@@ -62,7 +62,7 @@ This feature creates the first database table (`app_user`), the first Liquibase 
 
 | ID | Criterion |
 |---|---|
-| AC-13 | Public routes: `GET /api/v1/pokemon/**`, `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, Swagger UI and OpenAPI docs, `GET /actuator/health`. |
+| AC-13 | Public routes: `GET /api/v1/pokemon/**`, `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, Swagger UI and OpenAPI docs, `GET /actuator/health`. On these routes an `Authorization` header is ignored, so a stale or invalid token never turns a public route into a `401`. |
 | AC-14 | Any other route requires a valid token. Without a token, or with an invalid, expired or wrongly signed token, the API returns `401` in the common error format with a `WWW-Authenticate: Bearer` header. |
 | AC-15 | The API is stateless: no session and no cookies. |
 
@@ -75,7 +75,7 @@ This feature creates the first database table (`app_user`), the first Liquibase 
 ## Business rules
 
 - Usernames are unique and case-insensitive.
-- Passwords are only stored hashed. 72 characters is the BCrypt input limit.
+- Passwords are only stored hashed. 72 bytes (UTF-8) is the BCrypt input limit.
 - Login error messages never reveal whether the username exists.
 
 ## Main flows
