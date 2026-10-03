@@ -1,7 +1,9 @@
 package com.poketechtest.infrastructure.config;
 
 import com.poketechtest.application.port.out.PokemonCatalogPage;
+import com.poketechtest.domain.model.EvolutionNode;
 import com.poketechtest.domain.model.Pokemon;
+import com.poketechtest.domain.model.PokemonSpecies;
 import java.time.Duration;
 import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.annotation.EnableCaching;
@@ -19,7 +21,9 @@ import org.springframework.data.redis.serializer.RedisSerializationContext.Seria
 @EnableCaching
 public class CacheConfig implements CachingConfigurer {
 
-    private static final String KEY_PREFIX = "poke-tech-test::";
+    // Bump the version when a cached class changes, so entries with the old shape are never read (US02 TDR-004).
+    private static final String CACHE_VERSION = "v2";
+    private static final String KEY_PREFIX = "poke-tech-test::" + CACHE_VERSION + "::";
 
     @Bean
     RedisCacheManager cacheManager(RedisConnectionFactory redisConnectionFactory, PokeApiProperties pokeApiProperties) {
@@ -27,6 +31,8 @@ public class CacheConfig implements CachingConfigurer {
         return RedisCacheManager.builder(redisConnectionFactory)
                 .withCacheConfiguration(CacheNames.POKEAPI_PAGES, jsonCacheConfiguration(PokemonCatalogPage.class, cacheTtl))
                 .withCacheConfiguration(CacheNames.POKEAPI_POKEMON, jsonCacheConfiguration(Pokemon.class, cacheTtl))
+                .withCacheConfiguration(CacheNames.POKEAPI_SPECIES, jsonCacheConfiguration(PokemonSpecies.class, cacheTtl))
+                .withCacheConfiguration(CacheNames.POKEAPI_EVOLUTION_CHAINS, jsonCacheConfiguration(EvolutionNode.class, cacheTtl))
                 .disableCreateOnMissingCache()
                 .build();
     }

@@ -3,10 +3,15 @@ package com.poketechtest.infrastructure.pokeapi;
 import com.poketechtest.application.exception.ExternalServiceException;
 import com.poketechtest.application.port.out.PokemonCatalogPage;
 import com.poketechtest.application.port.out.PokemonCatalogPort;
+import com.poketechtest.domain.model.EvolutionNode;
 import com.poketechtest.domain.model.Pokemon;
+import com.poketechtest.domain.model.PokemonSpecies;
 import com.poketechtest.infrastructure.config.CacheNames;
+import com.poketechtest.infrastructure.config.PokeApiProperties;
+import com.poketechtest.infrastructure.pokeapi.dto.PokeApiEvolutionChainResponse;
 import com.poketechtest.infrastructure.pokeapi.dto.PokeApiPageResponse;
 import com.poketechtest.infrastructure.pokeapi.dto.PokeApiPokemonResponse;
+import com.poketechtest.infrastructure.pokeapi.dto.PokeApiSpeciesResponse;
 import java.util.Optional;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +31,7 @@ public class PokeApiClient implements PokemonCatalogPort {
 
     private final RestClient pokeApiRestClient;
     private final PokeApiMapper pokeApiMapper;
+    private final PokeApiProperties pokeApiProperties;
 
     @Override
     @Cacheable(cacheNames = CacheNames.POKEAPI_PAGES, key = "#offset + '-' + #limit")
@@ -40,13 +46,33 @@ public class PokeApiClient implements PokemonCatalogPort {
     }
 
     @Override
-    @Cacheable(cacheNames = CacheNames.POKEAPI_POKEMON, key = "#name", unless = "#result == null")
-    public Optional<Pokemon> findByName(String name) {
-        return get("pokemon name=" + name, () -> pokeApiRestClient.get()
-                        .uri("/pokemon/{name}", name)
+    @Cacheable(cacheNames = CacheNames.POKEAPI_POKEMON, key = "#idOrName", unless = "#result == null")
+    public Optional<Pokemon> findByIdOrName(String idOrName) {
+        return get("pokemon idOrName=" + idOrName, () -> pokeApiRestClient.get()
+                        .uri("/pokemon/{idOrName}", idOrName)
                         .retrieve()
                         .body(PokeApiPokemonResponse.class))
                 .map(pokeApiMapper::toPokemon);
+    }
+
+    @Override
+    @Cacheable(cacheNames = CacheNames.POKEAPI_SPECIES, key = "#speciesName", unless = "#result == null")
+    public Optional<PokemonSpecies> findSpecies(String speciesName) {
+        return get("species name=" + speciesName, () -> pokeApiRestClient.get()
+                        .uri("/pokemon-species/{name}", speciesName)
+                        .retrieve()
+                        .body(PokeApiSpeciesResponse.class))
+                .map(pokeApiMapper::toSpecies);
+    }
+
+    @Override
+    @Cacheable(cacheNames = CacheNames.POKEAPI_EVOLUTION_CHAINS, key = "#evolutionChainId", unless = "#result == null")
+    public Optional<EvolutionNode> findEvolutionChain(int evolutionChainId) {
+        return get("evolution chain id=" + evolutionChainId, () -> pokeApiRestClient.get()
+                        .uri("/evolution-chain/{id}", evolutionChainId)
+                        .retrieve()
+                        .body(PokeApiEvolutionChainResponse.class))
+                .map(response -> pokeApiMapper.toEvolutionChain(response, pokeApiProperties.spriteBaseUrl()));
     }
 
     /** Returns empty on 404; any other failure means PokeAPI is not available. */

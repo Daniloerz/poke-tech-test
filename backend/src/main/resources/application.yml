@@ -29,6 +29,7 @@ pokeapi:
   connect-timeout: ${POKEAPI_CONNECT_TIMEOUT:3s}
   read-timeout: ${POKEAPI_READ_TIMEOUT:5s}
   cache-ttl: ${POKEAPI_CACHE_TTL:24h}
+  sprite-base-url: ${POKEAPI_SPRITE_BASE_URL:https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon}
 
 management:
   endpoints:

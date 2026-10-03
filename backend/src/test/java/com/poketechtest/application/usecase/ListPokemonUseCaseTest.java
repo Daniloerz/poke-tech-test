@@ -48,8 +48,8 @@ class ListPokemonUseCaseTest {
     @Test
     void listsThePokemonOfTheRequestedPage() {
         when(pokemonCatalogPort.listPage(40, 2)).thenReturn(new PokemonCatalogPage(List.of("pidgey", "rattata"), TOTAL_COUNT));
-        when(pokemonCatalogPort.findByName("pidgey")).thenReturn(Optional.of(pokemon(16, "pidgey")));
-        when(pokemonCatalogPort.findByName("rattata")).thenReturn(Optional.of(pokemon(19, "rattata")));
+        when(pokemonCatalogPort.findByIdOrName("pidgey")).thenReturn(Optional.of(pokemon(16, "pidgey")));
+        when(pokemonCatalogPort.findByIdOrName("rattata")).thenReturn(Optional.of(pokemon(19, "rattata")));
 
         PokemonPage result = listPokemonUseCase.list(20, 2);
 
@@ -62,12 +62,12 @@ class ListPokemonUseCaseTest {
     @Test
     void keepsTheCatalogOrderWhenCallsFinishInAnotherOrder() {
         when(pokemonCatalogPort.listPage(0, 3)).thenReturn(new PokemonCatalogPage(List.of("bulbasaur", "ivysaur", "venusaur"), TOTAL_COUNT));
-        when(pokemonCatalogPort.findByName("bulbasaur")).thenAnswer(invocation -> {
+        when(pokemonCatalogPort.findByIdOrName("bulbasaur")).thenAnswer(invocation -> {
             Thread.sleep(200);
             return Optional.of(pokemon(1, "bulbasaur"));
         });
-        when(pokemonCatalogPort.findByName("ivysaur")).thenReturn(Optional.of(pokemon(2, "ivysaur")));
-        when(pokemonCatalogPort.findByName("venusaur")).thenReturn(Optional.of(pokemon(3, "venusaur")));
+        when(pokemonCatalogPort.findByIdOrName("ivysaur")).thenReturn(Optional.of(pokemon(2, "ivysaur")));
+        when(pokemonCatalogPort.findByIdOrName("venusaur")).thenReturn(Optional.of(pokemon(3, "venusaur")));
 
         PokemonPage result = listPokemonUseCase.list(0, 3);
 
@@ -82,7 +82,7 @@ class ListPokemonUseCaseTest {
 
         assertThat(result.items()).isEmpty();
         assertThat(result.totalElements()).isEqualTo(TOTAL_COUNT);
-        verify(pokemonCatalogPort, never()).findByName(anyString());
+        verify(pokemonCatalogPort, never()).findByIdOrName(anyString());
     }
 
     @Test
@@ -98,8 +98,8 @@ class ListPokemonUseCaseTest {
     @Test
     void propagatesTheErrorWhenOnePokemonCallFails() {
         when(pokemonCatalogPort.listPage(0, 2)).thenReturn(new PokemonCatalogPage(List.of("bulbasaur", "ivysaur"), TOTAL_COUNT));
-        when(pokemonCatalogPort.findByName("bulbasaur")).thenReturn(Optional.of(pokemon(1, "bulbasaur")));
-        when(pokemonCatalogPort.findByName("ivysaur")).thenThrow(new ExternalServiceException("PokeAPI is down"));
+        when(pokemonCatalogPort.findByIdOrName("bulbasaur")).thenReturn(Optional.of(pokemon(1, "bulbasaur")));
+        when(pokemonCatalogPort.findByIdOrName("ivysaur")).thenThrow(new ExternalServiceException("PokeAPI is down"));
 
         assertThatThrownBy(() -> listPokemonUseCase.list(0, 2))
                 .isInstanceOf(ExternalServiceException.class)
@@ -109,7 +109,7 @@ class ListPokemonUseCaseTest {
     @Test
     void failsWhenAListedPokemonIsNotFoundInTheCatalog() {
         when(pokemonCatalogPort.listPage(0, 1)).thenReturn(new PokemonCatalogPage(List.of("missingno"), TOTAL_COUNT));
-        when(pokemonCatalogPort.findByName("missingno")).thenReturn(Optional.empty());
+        when(pokemonCatalogPort.findByIdOrName("missingno")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> listPokemonUseCase.list(0, 1))
                 .isInstanceOf(ExternalServiceException.class)
@@ -124,6 +124,12 @@ class ListPokemonUseCaseTest {
     }
 
     private Pokemon pokemon(int id, String name) {
-        return new Pokemon(id, name, null, List.of("normal"), 10, List.of("tackle"));
+        return Pokemon.builder()
+                .id(id)
+                .name(name)
+                .types(List.of("normal"))
+                .weightHectograms(10)
+                .moves(List.of("tackle"))
+                .build();
     }
 }
