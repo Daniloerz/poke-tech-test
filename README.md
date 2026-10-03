@@ -4,7 +4,7 @@ REST API built with Java and Spring Boot that integrates [PokeAPI](https://pokea
 
 The exercise statement is in [`java_technical_interview_exercise.md`](java_technical_interview_exercise.md).
 
-> **Status:** backend in progress. Done: US01 (Pokemon list), US02 (Pokemon detail), user registration and JWT authentication, US03 (synchronization to the local database), US04 (local list, update and delete). The frontend will start next.
+> **Status:** backend complete. Done: US01 (Pokemon list), US02 (Pokemon detail), user registration and JWT authentication, US03 (synchronization to the local database), US04 (local list, update and delete). The frontend will start next.
 
 ## Stack
 
