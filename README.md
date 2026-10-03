@@ -4,7 +4,7 @@ REST API built with Java and Spring Boot that integrates [PokeAPI](https://pokea
 
 The exercise statement is in [`java_technical_interview_exercise.md`](java_technical_interview_exercise.md).
 
-> **Status:** project bootstrap. The backend features are added one user story at a time. The frontend will start once the backend is complete.
+> **Status:** backend in progress. Done: US01 (Pokemon list). The frontend will start once the backend is complete.
 
 ## Stack
 
@@ -50,6 +50,18 @@ cd backend
 DATABASE_PASSWORD=<your-password> ./mvnw spring-boot:run
 ```
 
+## API
+
+Interactive documentation (Swagger UI): `http://localhost:8080/swagger-ui.html`
+
+| Method | Path | Access | Story | Description |
+|---|---|---|---|---|
+| `GET` | `/api/v1/pokemon?page=0&size=20` | Public | US01 | Paginated list from PokeAPI (sprite, types, weight in kg, moves). `size` from 1 to 50. |
+
+Errors use the RFC 9457 Problem Details format (`application/problem+json`): `400` for invalid input, `502` when PokeAPI is not available, `500` for unexpected errors.
+
+PokeAPI responses are cached in Redis for 24 hours. If Redis is down, the API still works without the cache.
+
 ## Environment variables
 
 All variables are documented in [`.env.example`](.env.example). `.env` is read only by Docker Compose; the backend reads plain environment variables.
@@ -65,6 +77,10 @@ All variables are documented in [`.env.example`](.env.example). `.env` is read o
 | `DATABASE_USER` | Backend | `pokemon` |
 | `DATABASE_PASSWORD` | Backend | none (required) |
 | `SERVER_PORT` | Backend | `8080` |
+| `REDIS_HOST` / `REDIS_PORT` | Backend | `localhost` / `6380` |
+| `POKEAPI_BASE_URL` | Backend | `https://pokeapi.co/api/v2` |
+| `POKEAPI_CONNECT_TIMEOUT` / `POKEAPI_READ_TIMEOUT` | Backend | `3s` / `5s` |
+| `POKEAPI_CACHE_TTL` | Backend | `24h` |
 
 The host ports avoid the usual `5432` and `6379`, which are often used by other local containers.
 
