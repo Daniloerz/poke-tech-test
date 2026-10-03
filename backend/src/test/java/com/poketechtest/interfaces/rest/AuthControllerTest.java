@@ -102,6 +102,17 @@ class AuthControllerTest {
     }
 
     @Test
+    void registerRejectsUnknownFields() throws Exception {
+        mockMvc.perform(json(post(AUTH_PATH + "/register"), """
+                        {"username": "brock", "password": "onix12345", "role": "admin"}"""))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field").value("role"))
+                .andExpect(jsonPath("$.errors[0].message").value("is not a recognized field"));
+
+        verifyNoInteractions(registerUserUseCase);
+    }
+
+    @Test
     void registerReturnsConflictWhenTheUsernameExists() throws Exception {
         when(registerUserUseCase.register("ash", "pikachu123")).thenThrow(new UsernameAlreadyExistsException("ash"));
 

@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import tools.jackson.databind.exc.UnrecognizedPropertyException;
 
 @Slf4j
 @RestControllerAdvice
@@ -38,6 +39,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final String ERRORS_PROPERTY = "errors";
     private static final String BEARER_CHALLENGE = "Bearer";
+    private static final String UNKNOWN_FIELD_MESSAGE = "is not a recognized field";
 
     public record ValidationError(String field, String message) {
     }
@@ -124,6 +126,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotReadable(
             HttpMessageNotReadableException exception, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        // Request bodies are strict (spring.jackson fail-on-unknown-properties): name the field the client should not send.
+        if (exception.getMostSpecificCause() instanceof UnrecognizedPropertyException unknownField) {
+            ValidationError error = new ValidationError(unknownField.getPropertyName(), UNKNOWN_FIELD_MESSAGE);
+            return handleExceptionInternal(exception, badRequest(List.of(error)), headers, HttpStatus.BAD_REQUEST, request);
+        }
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, MALFORMED_BODY_DETAIL);
         return handleExceptionInternal(exception, problemDetail, headers, HttpStatus.BAD_REQUEST, request);
     }

@@ -29,7 +29,6 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Pokemon catalog", description = "Pokemon read from PokeAPI")
 public class PokemonController {
 
-    private static final int MAX_PAGE_SIZE = 50;
     private static final String ID_OR_NAME_PATTERN = "^[A-Za-z0-9-]{1,50}$";
     private static final String ID_OR_NAME_MESSAGE = "must have 1 to 50 letters, digits or hyphens";
 
@@ -45,8 +44,9 @@ public class PokemonController {
     @ApiResponse(responseCode = "502", description = "PokeAPI is not available",
             content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     public PageResponse<PokemonSummaryResponse> list(
-            @Parameter(description = "Zero-based page index") @RequestParam(defaultValue = "0") @Min(0) int page,
-            @Parameter(description = "Page size, from 1 to " + MAX_PAGE_SIZE) @RequestParam(defaultValue = "20") @Min(1) @Max(MAX_PAGE_SIZE) int size) {
+            @Parameter(description = "Zero-based page index") @RequestParam(defaultValue = Pagination.DEFAULT_PAGE) @Min(0) int page,
+            @Parameter(description = "Page size, from 1 to " + Pagination.MAX_SIZE)
+            @RequestParam(defaultValue = Pagination.DEFAULT_SIZE) @Min(1) @Max(Pagination.MAX_SIZE) int size) {
         return pokemonRestMapper.toPageResponse(listPokemonUseCase.list(page, size));
     }
 

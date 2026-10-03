@@ -3,10 +3,12 @@ package com.poketechtest.infrastructure.persistence;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.poketechtest.application.exception.PokemonAlreadySyncedException;
 import com.poketechtest.domain.model.LocalPokemon;
+import com.poketechtest.domain.model.PageResult;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.List;
@@ -19,6 +21,9 @@ import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 @ExtendWith(MockitoExtension.class)
 class LocalPokemonRepositoryAdapterTest {
@@ -69,6 +74,39 @@ class LocalPokemonRepositoryAdapterTest {
         assertThat(inserted.types()).containsExactly("electric");
         assertThat(inserted.tags()).isEmpty();
         assertThat(inserted.updatedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void findPageRequestsThePageOrderedByIdAndMapsIt() {
+        PageRequest expectedRequest = PageRequest.of(1, 2, Sort.by("id"));
+        when(localPokemonJpaRepository.findAll(expectedRequest)).thenReturn(new PageImpl<>(List.of(bulbasaurEntity()), expectedRequest, 3));
+
+        PageResult<LocalPokemon> page = localPokemonRepositoryAdapter.findPage(1, 2);
+
+        assertThat(page.items()).extracting(LocalPokemon::name).containsExactly("bulbasaur");
+        assertThat(page.page()).isEqualTo(1);
+        assertThat(page.size()).isEqualTo(2);
+        assertThat(page.totalElements()).isEqualTo(3);
+        assertThat(page.totalPages()).isEqualTo(2);
+    }
+
+    @Test
+    void updateSavesTheProprietaryFieldsAndReturnsTheStoredRecord() {
+        when(localPokemonJpaRepository.saveAndFlush(any(LocalPokemonEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        LocalPokemon changed = LocalPokemon.builder().id(1L).pokeApiId(1).name("bulbasaur").localizedName("Bisasam").tags(List.of("grass-starter")).build();
+
+        LocalPokemon updated = localPokemonRepositoryAdapter.update(changed);
+
+        assertThat(updated.id()).isEqualTo(1L);
+        assertThat(updated.localizedName()).isEqualTo("Bisasam");
+        assertThat(updated.tags()).containsExactly("grass-starter");
+    }
+
+    @Test
+    void deleteByIdDelegatesToSpringData() {
+        localPokemonRepositoryAdapter.deleteById(4L);
+
+        verify(localPokemonJpaRepository).deleteById(4L);
     }
 
     @Test

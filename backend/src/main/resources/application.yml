@@ -11,6 +11,10 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+  jackson:
+    deserialization:
+      # Strict request bodies: an unknown field is a client mistake, not something to ignore (US04 TDR-002).
+      fail-on-unknown-properties: true
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
   data:
