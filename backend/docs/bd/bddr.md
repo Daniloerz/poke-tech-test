@@ -280,3 +280,4 @@ The fields are known; explicit columns are simpler and safer than a generic mode
 
 - The proprietary columns are nullable: a freshly synchronized Pokemon has none of them.
 - `region` is free text, not a foreign key to a region table, because the exercise does not define a list of regions.
+- Both audit times come from the database clock (`now()` for `synced_at`, `@UpdateTimestamp(source = DB)` for `updated_at`), so they can be compared safely.

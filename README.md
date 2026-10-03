@@ -4,7 +4,7 @@ REST API built with Java and Spring Boot that integrates [PokeAPI](https://pokea
 
 The exercise statement is in [`java_technical_interview_exercise.md`](java_technical_interview_exercise.md).
 
-> **Status:** backend in progress. Done: US01 (Pokemon list), US02 (Pokemon detail), user registration and JWT authentication. The frontend will start once the backend is complete.
+> **Status:** backend in progress. Done: US01 (Pokemon list), US02 (Pokemon detail), user registration and JWT authentication, US03 (synchronization to the local database). The frontend will start once the backend is complete.
 
 ## Stack
 
@@ -63,14 +63,18 @@ Interactive documentation (Swagger UI): `http://localhost:8080/swagger-ui.html`
 | `POST` | `/api/v1/auth/register` | Public | Auth | Create a user: `{"username", "password"}`. |
 | `POST` | `/api/v1/auth/login` | Public | Auth | Get a JWT: `{"accessToken", "tokenType": "Bearer", "expiresIn"}`. |
 | `GET` | `/api/v1/auth/me` | Token | Auth | The authenticated user. |
+| `POST` | `/api/v1/local-pokemon` | Token | US03 | Copy a Pokemon from PokeAPI into the local database: `{"idOrName": "pikachu"}`. `409` if it is already local. |
+| `GET` | `/api/v1/local-pokemon/{id}` | Token | US03 | A local Pokemon (PokeAPI snapshot plus `localizedName`, `region`, `tags`). |
 
-Errors use the RFC 9457 Problem Details format (`application/problem+json`): `400` for invalid input, `401` for bad credentials or a missing/invalid token, `404` when the Pokemon does not exist, `409` when a username is taken, `502` when PokeAPI is not available, `500` for unexpected errors.
+Errors use the RFC 9457 Problem Details format (`application/problem+json`): `400` for invalid input, `401` for bad credentials or a missing/invalid token, `404` when the Pokemon does not exist, `409` when a username is taken or a Pokemon is already local, `502` when PokeAPI is not available, `500` for unexpected errors.
 
 PokeAPI responses are cached in Redis for 24 hours. If Redis is down, the API still works without the cache.
 
 ## Authentication and demo users
 
 The PokeAPI catalog, register, login, Swagger UI and the health check are public. Every other route needs a token.
+
+The database also starts with three local Pokemon (Bulbasaur, Charmander and Squirtle, local ids 1 to 3) with proprietary fields filled in.
 
 Demo users (created by the Liquibase seed):
 
