@@ -51,7 +51,7 @@ CRUD on `local_pokemon`:
 | AC-04 | `updatedAt` changes; `syncedAt` and the PokeAPI snapshot (`name`, `types`, measures, sprite) never change. |
 | AC-05 | `localizedName` and `region` are optional: `null` (or missing) clears them. When present they are trimmed and must have 1 to 100 characters (not blank). |
 | AC-06 | `tags` is required (use `[]` to clear). At most 10 tags; each tag has 1 to 30 letters, digits or hyphens. Tags are stored trimmed, in lower case and without duplicates, keeping the first order. |
-| AC-07 | A body with any other field (for example `name` or `weightKg`) returns `400` naming the field: the PokeAPI snapshot is not editable, and silently ignoring the field would hide a client mistake. |
+| AC-07 | A body with any other field (for example `name` or `weightKg`) returns `400` naming the field (`is not a recognized field`): the PokeAPI snapshot is not editable, and silently ignoring the field would hide a client mistake. |
 | AC-08 | A missing or malformed body returns `400`. A non-JSON content type returns `415`. |
 | AC-09 | An id that does not exist returns `404`. A non-numeric id returns `400`. |
 

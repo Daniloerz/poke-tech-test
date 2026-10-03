@@ -21,7 +21,7 @@ Unknown field (AC-07):
   "title": "Bad Request",
   "status": 400,
   "detail": "Invalid request parameters.",
-  "errors": [{ "field": "name", "message": "is not an editable field" }]
+  "errors": [{ "field": "name", "message": "is not a recognized field" }]
 }
 ```
 
@@ -35,7 +35,7 @@ No new architectural decision: US01 ADR-001 and US03 ADR-001 apply. No `03-adrs.
 GET list: LocalPokemonController → ListLocalPokemonUseCase.list(page, size)
             → LocalPokemonRepository.findPage(page, size)   (ORDER BY id, one query + one count)
 
-PUT:      LocalPokemonController → UpdateLocalPokemonUseCase.update(id, changes)   @Transactional
+PUT:      LocalPokemonController → UpdateLocalPokemonUseCase.update(id, localizedName, region, tags)   @Transactional
             → LocalPokemonRepository.findById       empty → LocalPokemonNotFoundException (404)
             → localPokemon.withProprietaryFields(localizedName, region, tags)       (domain normalizes)
             → LocalPokemonRepository.update → 200
@@ -72,9 +72,10 @@ No external call in these flows, so the use cases can be `@Transactional` (unlik
 - `UpdateLocalPokemonRequest` (record) with Bean Validation (TDR-002):
   - `localizedName`, `region`: `@Size(max = 100)`, `@Pattern(".*\\S.*")` (not blank when present).
   - `tags`: `@NotNull @Size(max = 10) List<@NotBlank @Pattern("^[A-Za-z0-9-]{1,30}$") String>`.
-  - `@JsonIgnoreProperties(ignoreUnknown = false)`: unknown fields fail.
+  - Unknown fields fail through the global setting `spring.jackson.deserialization.fail-on-unknown-properties: true` (TDR-002; a per-record annotation cannot override Spring Boot's global setting).
 - `PageResponse<T>` reused; `LocalPokemonRestMapper` gains the page mapping. `PokemonRestMapper` uses `PageResult`.
-- `GlobalExceptionHandler.handleHttpMessageNotReadable`: if the cause is an unknown property, the `400` lists it in `errors` (`"is not an editable field"`); otherwise "Malformed request body." Validation errors on list elements (`tags[1]`) keep their index in `field`.
+- `GlobalExceptionHandler.handleHttpMessageNotReadable`: if the cause is an unknown property (Jackson 3 `UnrecognizedPropertyException`), the `400` lists it in `errors` (`"is not a recognized field"`); otherwise "Malformed request body." Validation errors on list elements (`tags[0]`) keep their index in `field`.
+- `Pagination` (package-private constants: default page `0`, default size `20`, max size `50`) is shared by `PokemonController` and `LocalPokemonController`.
 
 ## Tests (unit only)
 
@@ -87,7 +88,9 @@ No external call in these flows, so the use cases can be `@Transactional` (unlik
 | AC-12 | `LocalPokemonControllerTest` (no token) |
 | — | `PageResultTest` (replaces `PokemonPageTest`) |
 
-Manual check with Docker Compose: full CRUD flow, `updatedAt` changes and `syncedAt` does not, delete and re-synchronize.
+`AuthControllerTest.registerRejectsUnknownFields` shows that the strict bodies apply to the whole API.
+
+Manual checks with Docker Compose: the PokeAPI catalog (list and detail) still works with strict request bodies; list of local Pokemon (`size=2` → ids 1 and 2, `totalPages` 3); update of Squirtle trims `"  Schiggy "` and turns `["Water-Starter", "gen-1", "WATER-starter"]` into `["water-starter", "gen-1"]`, keeps the snapshot and `syncedAt`, changes `updatedAt`; `name` → `400` naming the field; blank region + invalid tag → `400` with both errors; missing `tags` → `400`; unknown id → `404`; `text/plain` → `415`; no token → `401`; delete → `204`, then `GET` → `404`, delete again → `404`, re-synchronize → `201`.
 
 ## Security
 

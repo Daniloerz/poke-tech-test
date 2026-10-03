@@ -49,18 +49,20 @@ By default Spring Boot ignores unknown JSON fields. A client sending `{"name": "
 #### Option C — Fail on unknown fields only in `UpdateLocalPokemonRequest`
 - `@JsonIgnoreProperties(ignoreUnknown = false)` on the record; the `400` names the field.
 - Scope limited to the endpoint where the mistake matters.
+- **Does not work:** `ignoreUnknown = false` only means "do not ignore by this annotation"; it does not override the global setting of Spring Boot, which ignores unknown fields. The test `updateRejectsSnapshotFieldsNamingTheField` returned `200`.
 
 ### Decision
 
-Option C.
+Option B: `spring.jackson.deserialization.fail-on-unknown-properties: true`. (The plan first chose Option C; the implementation showed that it cannot work, so the decision was changed.)
 
 ### Rationale
 
-It is the "further defensive logic" the story asks for, exactly where it adds value, without changing other endpoints.
+It is the "further defensive logic" the story asks for, with one line of configuration. Being strict in every request body is also consistent: a client that sends `{"role": "admin"}` to register gets a clear `400` instead of a silent success.
 
 ### Consequences
 
-- `GlobalExceptionHandler` detects the unknown-property cause and returns it in `errors`.
+- Every request body (register, login, sync, update) rejects unknown fields with `400`, `errors: [{field, "is not a recognized field"}]`.
+- It only affects how the API reads requests. The PokeAPI client has its own `RestClient` and its DTOs ignore unknown fields explicitly, so PokeAPI can add fields without breaking us (checked with Docker Compose).
 
 ---
 
