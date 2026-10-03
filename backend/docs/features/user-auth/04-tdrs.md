@@ -73,19 +73,23 @@ Security errors happen in the filter chain, before the controller, so `@RestCont
 - No code.
 - Different error format from the rest of the API; clients need special cases.
 
-#### Option B — Custom `AuthenticationEntryPoint` and `AccessDeniedHandler` that write Problem Details
-- Same format as every other error; keeps the `WWW-Authenticate: Bearer` header.
-- Two small classes.
+#### Option B — Custom `AuthenticationEntryPoint` and `AccessDeniedHandler` that write the Problem Details JSON themselves
+- Same format as every other error.
+- The JSON is written by hand with a JSON mapper: a second place that builds error bodies.
+
+#### Option C — One handler that forwards security errors to Spring MVC's `HandlerExceptionResolver`
+- `SecurityProblemHandler` implements both interfaces and calls the resolver; `GlobalExceptionHandler` handles `AuthenticationException` (`401` + `WWW-Authenticate: Bearer`) and `AccessDeniedException` (`403`).
+- All error bodies are built in one class.
 
 ### Decision
 
-Option B.
+Option C. (The plan first chose Option B; during the implementation Option C proved simpler, so the decision was updated.)
 
 ### Rationale
 
-One error format for the whole API (US01 TDR-004).
+One error format and one place that builds it for the whole API (US01 TDR-004).
 
 ### Consequences
 
-- The entry point delegates the header to Spring's `BearerTokenAuthenticationEntryPoint` and only writes the body.
+- `GlobalExceptionHandler` depends on two Spring Security exception types; acceptable because it already lives in the web layer.
 - The `detail` is generic ("Authentication is required or the token is invalid."); the exact reason is only logged at `DEBUG`.
