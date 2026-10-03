@@ -16,6 +16,7 @@
 7. **US03:** sincronización bajo demanda de un Pokémon por id o nombre; 409 si ya existe localmente.
 8. **Sección GenAI del reto:** pendiente; no se hace hasta que el usuario lo indique.
 9. **Git:** el remoto `origin` ya existe; no hacer push sin autorización explícita.
+10. **Idioma de la documentación del proyecto:** todo en inglés, títulos incluidos (README, docs de features, ADR/TDR/BDDR, comentarios SQL, `SUB-AGENTS.md`). Las plantillas de este documento se traducen así: Context / Problem, Options considered, Option A/B/C, Decision, Rationale, Consequences. Los nombres de archivo (`01-context.md`, etc.) no cambian.
 
 # 1. Rol
 
