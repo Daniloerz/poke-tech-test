@@ -7,8 +7,10 @@ import static org.mockito.Mockito.when;
 
 import com.poketechtest.application.exception.UsernameAlreadyExistsException;
 import com.poketechtest.domain.model.User;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Optional;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,11 +54,25 @@ class UserRepositoryAdapterTest {
     }
 
     @Test
-    void saveTranslatesTheUniqueConstraintViolation() {
-        when(userJpaRepository.saveAndFlush(any(UserEntity.class))).thenThrow(new DataIntegrityViolationException("uk_app_user_username"));
+    void saveTranslatesTheUniqueUsernameViolation() {
+        when(userJpaRepository.saveAndFlush(any(UserEntity.class)))
+                .thenThrow(constraintViolation(UserRepositoryAdapter.USERNAME_UNIQUE_CONSTRAINT));
 
         assertThatThrownBy(() -> userRepositoryAdapter.save(User.newUser("ash", "hash")))
                 .isInstanceOf(UsernameAlreadyExistsException.class);
+    }
+
+    @Test
+    void saveRethrowsOtherConstraintViolations() {
+        DataIntegrityViolationException otherViolation = constraintViolation("ck_app_user_username_lower");
+        when(userJpaRepository.saveAndFlush(any(UserEntity.class))).thenThrow(otherViolation);
+
+        assertThatThrownBy(() -> userRepositoryAdapter.save(User.newUser("ash", "hash"))).isSameAs(otherViolation);
+    }
+
+    private DataIntegrityViolationException constraintViolation(String constraintName) {
+        ConstraintViolationException cause = new ConstraintViolationException("violation", new SQLException("violation"), constraintName);
+        return new DataIntegrityViolationException("violation", cause);
     }
 
     private UserEntity entity(Long id, String username, String passwordHash) {

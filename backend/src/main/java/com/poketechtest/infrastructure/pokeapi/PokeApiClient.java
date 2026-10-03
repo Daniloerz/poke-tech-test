@@ -97,6 +97,9 @@ public class PokeApiClient implements PokemonCatalogPort {
 
     private ExternalServiceException unavailable(String operation, String reason, Throwable cause) {
         log.warn("PokeAPI call failed: {} - {}", operation, reason);
+        if (cause != null) {
+            log.debug("PokeAPI failure cause: {}", operation, cause);
+        }
         return new ExternalServiceException(UNAVAILABLE_MESSAGE, cause);
     }
 }
