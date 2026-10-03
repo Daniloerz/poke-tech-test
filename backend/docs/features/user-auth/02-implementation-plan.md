@@ -81,6 +81,7 @@ The dummy hash comparison makes the response time similar for unknown users and 
   - `oauth2ResourceServer(jwt)` with a `NimbusJwtDecoder` for HS256 using the shared secret.
   - `SecurityProblemHandler` is both the `AuthenticationEntryPoint` and the `AccessDeniedHandler`. It forwards the exception to Spring MVC's `HandlerExceptionResolver`, so `GlobalExceptionHandler` writes the `401` / `403` like any other error (TDR-003).
   - `PasswordEncoder` bean: `BCryptPasswordEncoder` (strength 10). `Clock` bean (UTC) for the token times, replaced by a fixed clock in tests.
+- `SecurityConfig` builds one `RequestMatcher` with the public routes; it is used both by `permitAll()` and by a `BearerTokenResolver` that ignores the `Authorization` header on public routes (AC-13).
 - `JwtTokenIssuer`: `NimbusJwtEncoder` with the same secret; claims `sub`, `uid`, `iat`, `exp`, `iss`. The decoder validates signature, expiry and issuer.
 - `JwtProperties` (`@ConfigurationProperties("security.jwt")`, validated at startup): `secret` (min 32 characters), `expiration` (default `1h`), `issuer`. `toString()` hides the secret.
 

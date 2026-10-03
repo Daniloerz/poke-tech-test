@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class UserRepositoryAdapter implements UserRepository {
 
+    static final String USERNAME_UNIQUE_CONSTRAINT = "uk_app_user_username";
+
     private final UserJpaRepository userJpaRepository;
     private final UserEntityMapper userEntityMapper;
 
@@ -26,7 +28,10 @@ public class UserRepositoryAdapter implements UserRepository {
             return userEntityMapper.toDomain(userJpaRepository.saveAndFlush(userEntityMapper.toEntity(user)));
         } catch (DataIntegrityViolationException exception) {
             // Two registrations with the same username at the same time: the unique constraint wins.
-            throw new UsernameAlreadyExistsException(user.username());
+            if (ConstraintViolations.isViolationOf(exception, USERNAME_UNIQUE_CONSTRAINT)) {
+                throw new UsernameAlreadyExistsException(user.username());
+            }
+            throw exception;
         }
     }
 }

@@ -4,7 +4,7 @@ REST API built with Java and Spring Boot that integrates [PokeAPI](https://pokea
 
 The exercise statement is in [`java_technical_interview_exercise.md`](java_technical_interview_exercise.md).
 
-> **Status:** backend in progress. Done: US01 (Pokemon list), US02 (Pokemon detail), user registration and JWT authentication, US03 (synchronization to the local database), US04 (local list, update and delete). The frontend will start next.
+> **Status:** backend complete. Done: US01 (Pokemon list), US02 (Pokemon detail), user registration and JWT authentication, US03 (synchronization to the local database), US04 (local list, update and delete). The frontend will start next.
 
 ## Stack
 
@@ -69,7 +69,7 @@ Interactive documentation (Swagger UI): `http://localhost:8080/swagger-ui.html`
 | `PUT` | `/api/v1/local-pokemon/{id}` | Token | US04 | Replace the proprietary fields: `{"localizedName", "region", "tags"}`. The PokeAPI snapshot is not editable. |
 | `DELETE` | `/api/v1/local-pokemon/{id}` | Token | US04 | Delete a local Pokemon (`204`). It can be synchronized again. |
 
-Errors use the RFC 9457 Problem Details format (`application/problem+json`): `400` for invalid input or unknown fields, `401` for bad credentials or a missing/invalid token, `404` when the Pokemon does not exist, `409` when a username is taken or a Pokemon is already local, `502` when PokeAPI is not available, `500` for unexpected errors.
+Errors use the RFC 9457 Problem Details format (`application/problem+json`): `400` for invalid input or unknown fields, `401` for bad credentials or a missing/invalid token, `404` when the Pokemon does not exist, `409` when a username is taken or a Pokemon is already local, `415` for a non-JSON body, `502` when PokeAPI is not available, `500` for unexpected errors.
 
 Request bodies are strict: an unknown field returns `400` with the field name.
 
@@ -121,11 +121,11 @@ All variables are documented in [`.env.example`](.env.example). `.env` is read o
 | `JWT_SECRET` | Compose and backend | none (required, at least 32 characters) |
 | `JWT_EXPIRATION` | Compose and backend | `1h` |
 
-The host ports avoid the usual `5432` and `6379`, which are often used by other local containers.
+The host ports avoid the usual `5432` and `6379`, which are often used by other local containers. PostgreSQL and Redis are published on `127.0.0.1` only.
 
 ## Tests
 
-Unit tests use JUnit 5 and Mockito. They do not need Docker or a database.
+Unit tests use JUnit 5 and Mockito. They do not need Docker or a database. Mockito is loaded as a Java agent by Surefire (configured in `pom.xml`), as recommended since Java 21.
 
 ```bash
 cd backend
@@ -139,6 +139,7 @@ cd backend
 | `backend/docs/features/<feature>/` | Context, implementation plan, ADRs and TDRs of each feature |
 | `backend/docs/bd/` | ERD, DDL, DML and database decisions (BDDR) |
 | `CLAUDE.md` | Instructions and approved decisions for the AI development agent |
+| `SUB-AGENTS.md` | Log of the work delegated to AI subagents and how it was reviewed |
 
 ## Main assumptions
 

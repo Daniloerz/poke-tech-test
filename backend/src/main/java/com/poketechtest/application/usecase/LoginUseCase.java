@@ -34,12 +34,12 @@ public class LoginUseCase {
         // Unknown users are checked against a dummy hash, so both failures take the same time (no user enumeration).
         String passwordHash = user.map(User::passwordHash).orElse(dummyPasswordHash);
         boolean passwordMatches = passwordHasher.matches(rawPassword, passwordHash);
-        if (user.isEmpty() || !passwordMatches) {
-            log.info("Failed login attempt");
-            throw new InvalidCredentialsException();
-        }
 
-        log.debug("User logged in: id={}", user.get().id());
-        return tokenIssuer.issue(user.get());
+        User authenticated = user.filter(found -> passwordMatches).orElseThrow(() -> {
+            log.info("Failed login attempt");
+            return new InvalidCredentialsException();
+        });
+        log.debug("User logged in: id={}", authenticated.id());
+        return tokenIssuer.issue(authenticated);
     }
 }

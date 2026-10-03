@@ -183,6 +183,7 @@ One migration mechanism for schema and data, reproducible and easy to review.
 ### Consequences
 
 - The demo passwords are public (README). They are demo credentials for a local project, not secrets.
+- The seed runs in every environment where the changelog runs. That is what the exercise needs (a demo that works after `docker compose up`). For a real deployment, the seed changesets would get a Liquibase `context: demo` enabled only locally (`spring.liquibase.contexts`). Not done now, to keep the demo setup to one command.
 - To change a demo password, add a new changeset; never edit an applied one (Liquibase checksums).
 
 ---

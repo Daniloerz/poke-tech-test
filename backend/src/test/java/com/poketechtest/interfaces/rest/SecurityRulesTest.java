@@ -4,11 +4,13 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.poketechtest.application.port.out.IssuedToken;
 import com.poketechtest.application.usecase.GetCurrentUserUseCase;
 import com.poketechtest.application.usecase.GetPokemonDetailUseCase;
 import com.poketechtest.application.usecase.ListPokemonUseCase;
@@ -66,6 +68,26 @@ class SecurityRulesTest {
         when(listPokemonUseCase.list(anyInt(), anyInt())).thenReturn(new PageResult<>(List.of(), 0, 20, 0));
 
         mockMvc.perform(get("/api/v1/pokemon")).andExpect(status().isOk());
+    }
+
+    @Test
+    void publicRoutesIgnoreAStaleOrInvalidToken() throws Exception {
+        when(listPokemonUseCase.list(anyInt(), anyInt())).thenReturn(new PageResult<>(List.of(), 0, 20, 0));
+        when(loginUseCase.login("ash", "pikachu123")).thenReturn(new IssuedToken("jwt-value", 3600));
+
+        mockMvc.perform(get("/api/v1/pokemon").header(HttpHeaders.AUTHORIZATION, "Bearer expired-or-invalid"))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/auth/login").header(HttpHeaders.AUTHORIZATION, "Bearer expired-or-invalid")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"username\": \"ash\", \"password\": \"pikachu123\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void healthAndApiDocsAreNotProtected() throws Exception {
+        // The slice test has no actuator or springdoc endpoints: 404 (not 401) proves the security rules let them through.
+        mockMvc.perform(get("/actuator/health")).andExpect(status().isNotFound());
+        mockMvc.perform(get("/v3/api-docs")).andExpect(status().isNotFound());
+        mockMvc.perform(get("/swagger-ui/index.html")).andExpect(status().isNotFound());
     }
 
     @Test

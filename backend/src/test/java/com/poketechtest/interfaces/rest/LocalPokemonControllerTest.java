@@ -194,15 +194,6 @@ class LocalPokemonControllerTest {
     }
 
     @Test
-    void managementRoutesNeedAToken() throws Exception {
-        mockMvc.perform(get(LOCAL_POKEMON_PATH)).andExpect(status().isUnauthorized());
-        mockMvc.perform(updateRequest(4, "{\"tags\": []}")).andExpect(status().isUnauthorized());
-        mockMvc.perform(delete(LOCAL_POKEMON_PATH + "/4")).andExpect(status().isUnauthorized());
-
-        verifyNoInteractions(listLocalPokemonUseCase, updateLocalPokemonUseCase, deleteLocalPokemonUseCase);
-    }
-
-    @Test
     void syncReturnsCreatedWithTheLocalRecordAndLocation() throws Exception {
         when(syncPokemonUseCase.sync("pikachu")).thenReturn(pikachu());
 
@@ -304,10 +295,14 @@ class LocalPokemonControllerTest {
 
     @Test
     void everyRouteNeedsAToken() throws Exception {
+        mockMvc.perform(get(LOCAL_POKEMON_PATH)).andExpect(status().isUnauthorized());
         mockMvc.perform(syncRequest("{\"idOrName\": \"pikachu\"}")).andExpect(status().isUnauthorized());
         mockMvc.perform(get(LOCAL_POKEMON_PATH + "/4")).andExpect(status().isUnauthorized());
+        mockMvc.perform(updateRequest(4, "{\"tags\": []}")).andExpect(status().isUnauthorized());
+        mockMvc.perform(delete(LOCAL_POKEMON_PATH + "/4")).andExpect(status().isUnauthorized());
 
-        verifyNoInteractions(syncPokemonUseCase, getLocalPokemonUseCase);
+        verifyNoInteractions(listLocalPokemonUseCase, syncPokemonUseCase, getLocalPokemonUseCase,
+                updateLocalPokemonUseCase, deleteLocalPokemonUseCase);
     }
 
     private MockHttpServletRequestBuilder updateRequest(long id, String body) {

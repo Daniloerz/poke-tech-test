@@ -95,3 +95,34 @@ It gives reproducible migrations in every environment, and the developer can exp
 
 - `hibernate.ddl-auto=validate`: Hibernate never changes the schema; it only checks that the entities match it.
 - `docs/bd/ddl.sql` and `dml.sql` are a consolidated copy and must stay in sync with the changelogs.
+
+---
+
+## TDR-004 — Load Mockito as a Java agent in the tests
+
+### Context / Problem
+
+Mockito creates mocks with an agent. By default it attaches the agent to the running JVM at runtime ("self-attach"). Since Java 21 the JDK warns about this, and future versions will block it. During the final validation, the tests run in a clean `eclipse-temurin:21-jdk` container failed: 116 of 174 tests with "Could not self-attach to current VM". On the developer machine they passed.
+
+### Options considered
+
+#### Option A — Keep self-attach
+- No configuration.
+- Depends on the environment (it failed in a clean container) and stops working in future JDKs.
+
+#### Option B — Load Mockito with `-javaagent` in Surefire
+- `maven-dependency-plugin:properties` exposes the Mockito jar path; Surefire starts the test JVM with `-javaagent:"<mockito-core.jar>"`. This is the setup recommended by the Mockito documentation.
+- A few lines in `pom.xml`. The path is quoted because the Maven repository can be in a folder with spaces.
+
+### Decision
+
+Option B.
+
+### Rationale
+
+The tests must give the same result on every machine and in CI.
+
+### Consequences
+
+- No "self-attaching" warning in the test output.
+- Running a test from an IDE that does not use Surefire's `argLine` may still use self-attach (it works on the developer machine).

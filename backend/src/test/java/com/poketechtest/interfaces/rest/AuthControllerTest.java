@@ -90,6 +90,19 @@ class AuthControllerTest {
     }
 
     @Test
+    void registerRejectsAPasswordLongerThan72BytesEvenWith72OrFewerCharacters() throws Exception {
+        String fortyMultiByteCharacters = "ñ".repeat(40);
+
+        mockMvc.perform(json(post(AUTH_PATH + "/register"), """
+                        {"username": "brock", "password": "%s"}""".formatted(fortyMultiByteCharacters)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field").value("password"))
+                .andExpect(jsonPath("$.errors[0].message").value("must not be longer than 72 bytes in UTF-8"));
+
+        verifyNoInteractions(registerUserUseCase);
+    }
+
+    @Test
     void registerRejectsMissingFieldsAndMalformedJson() throws Exception {
         mockMvc.perform(json(post(AUTH_PATH + "/register"), "{}"))
                 .andExpect(status().isBadRequest())

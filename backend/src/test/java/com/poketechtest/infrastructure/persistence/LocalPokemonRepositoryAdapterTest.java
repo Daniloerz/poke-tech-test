@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.poketechtest.application.exception.LocalPokemonNotFoundException;
 import com.poketechtest.application.exception.PokemonAlreadySyncedException;
 import com.poketechtest.domain.model.LocalPokemon;
 import com.poketechtest.domain.model.PageResult;
@@ -24,6 +25,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 @ExtendWith(MockitoExtension.class)
 class LocalPokemonRepositoryAdapterTest {
@@ -100,6 +102,16 @@ class LocalPokemonRepositoryAdapterTest {
         assertThat(updated.id()).isEqualTo(1L);
         assertThat(updated.localizedName()).isEqualTo("Bisasam");
         assertThat(updated.tags()).containsExactly("grass-starter");
+    }
+
+    @Test
+    void updateOfARowDeletedMeanwhileIsNotFound() {
+        when(localPokemonJpaRepository.saveAndFlush(any(LocalPokemonEntity.class)))
+                .thenThrow(new ObjectOptimisticLockingFailureException(LocalPokemonEntity.class, 4L));
+
+        assertThatThrownBy(() -> localPokemonRepositoryAdapter.update(LocalPokemon.builder().id(4L).pokeApiId(25).name("pikachu").build()))
+                .isInstanceOf(LocalPokemonNotFoundException.class)
+                .hasMessage("Local Pokemon not found: 4");
     }
 
     @Test

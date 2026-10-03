@@ -1,5 +1,6 @@
 package com.poketechtest.infrastructure.persistence;
 
+import com.poketechtest.application.exception.LocalPokemonNotFoundException;
 import com.poketechtest.application.exception.PokemonAlreadySyncedException;
 import com.poketechtest.application.port.out.LocalPokemonRepository;
 import com.poketechtest.domain.model.LocalPokemon;
@@ -7,8 +8,8 @@ import com.poketechtest.domain.model.PageResult;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -43,8 +44,14 @@ public class LocalPokemonRepositoryAdapter implements LocalPokemonRepository {
 
     @Override
     public LocalPokemon update(LocalPokemon localPokemon) {
-        // Merge of the full entity; synced_at is not updatable and updated_at is refreshed by Hibernate.
-        return localPokemonEntityMapper.toDomain(localPokemonJpaRepository.saveAndFlush(localPokemonEntityMapper.toEntity(localPokemon)));
+        try {
+            // Merge of the full entity; synced_at is not updatable and updated_at is refreshed by Hibernate.
+            LocalPokemonEntity saved = localPokemonJpaRepository.saveAndFlush(localPokemonEntityMapper.toEntity(localPokemon));
+            return localPokemonEntityMapper.toDomain(saved);
+        } catch (ObjectOptimisticLockingFailureException exception) {
+            // The row was deleted by another request after it was read: for this client it no longer exists.
+            throw new LocalPokemonNotFoundException(localPokemon.id());
+        }
     }
 
     @Override
@@ -59,15 +66,10 @@ public class LocalPokemonRepositoryAdapter implements LocalPokemonRepository {
             return localPokemonEntityMapper.toDomain(saved);
         } catch (DataIntegrityViolationException exception) {
             // Two synchronizations of the same Pokemon at the same time: the unique constraint wins (US03 TDR-002).
-            if (violates(exception, POKE_API_ID_UNIQUE_CONSTRAINT)) {
+            if (ConstraintViolations.isViolationOf(exception, POKE_API_ID_UNIQUE_CONSTRAINT)) {
                 throw new PokemonAlreadySyncedException(localPokemon.name(), null);
             }
             throw exception;
         }
-    }
-
-    private boolean violates(DataIntegrityViolationException exception, String constraintName) {
-        return exception.getCause() instanceof ConstraintViolationException violation
-                && constraintName.equalsIgnoreCase(violation.getConstraintName());
     }
 }

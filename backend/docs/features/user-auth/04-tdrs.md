@@ -26,7 +26,8 @@ Less custom security code means fewer bugs. It is the approach recommended by th
 
 ### Consequences
 
-- The authenticated principal in controllers is a `Jwt`; the user id is read from the `uid` claim.
+- The authenticated principal in controllers is a `Jwt`; the user is identified by `sub` (the username). The `uid` claim is informative (it lets a client see its id without another call); the backend does not read it.
+- On public routes the bearer token is ignored (custom `BearerTokenResolver`), so the resource server never rejects a public request because of a stale token.
 - The issuer (`iss`) is validated together with the expiry.
 
 ---
@@ -57,7 +58,7 @@ Secure enough for this project, no extra dependency, and the seed hashes can be 
 
 ### Consequences
 
-- The password length limit is 72 characters (AC-04), so no input is silently truncated.
+- The password limit is 72 bytes in UTF-8 (AC-04), checked with a small custom constraint (`@MaxUtf8Bytes`), because `@Size` counts characters and Spring Security 7 throws an error (not a silent truncation) for longer inputs. Found by the independent review (SA-001).
 
 ---
 
