@@ -13,12 +13,29 @@ spring:
       ddl-auto: validate
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6380}
+      # Short timeouts: if Redis is down, requests fall back to PokeAPI quickly.
+      timeout: 1s
+      connect-timeout: 1s
 
 server:
   port: ${SERVER_PORT:8080}
+
+pokeapi:
+  base-url: ${POKEAPI_BASE_URL:https://pokeapi.co/api/v2}
+  connect-timeout: ${POKEAPI_CONNECT_TIMEOUT:3s}
+  read-timeout: ${POKEAPI_READ_TIMEOUT:5s}
+  cache-ttl: ${POKEAPI_CACHE_TTL:24h}
 
 management:
   endpoints:
     web:
       exposure:
         include: health
+  health:
+    # Redis is only a cache; the application stays healthy without it.
+    redis:
+      enabled: false
