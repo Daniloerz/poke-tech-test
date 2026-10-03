@@ -1,0 +1,7 @@
+erDiagram
+    APP_USER {
+        BIGINT id PK "identity"
+        VARCHAR(30) username UK "lower case"
+        VARCHAR(100) password_hash "BCrypt"
+        TIMESTAMPTZ created_at "default now()"
+    }
