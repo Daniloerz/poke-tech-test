@@ -36,7 +36,7 @@ public class ListPokemonUseCase {
     }
 
     private Pokemon findListedPokemon(String name) {
-        return pokemonCatalogPort.findByName(name)
+        return pokemonCatalogPort.findByIdOrName(name)
                 .orElseThrow(() -> new ExternalServiceException("Pokemon listed by the catalog was not found: " + name));
     }
 

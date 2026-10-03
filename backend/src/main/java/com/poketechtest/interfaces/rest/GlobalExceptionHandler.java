@@ -1,6 +1,7 @@
 package com.poketechtest.interfaces.rest;
 
 import com.poketechtest.application.exception.ExternalServiceException;
+import com.poketechtest.application.exception.PokemonNotFoundException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.TypeMismatchException;
@@ -32,6 +33,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ProblemDetail handleExternalService(ExternalServiceException exception) {
         // The adapter already logged the cause with its context.
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, EXTERNAL_SERVICE_DETAIL);
+    }
+
+    @ExceptionHandler(PokemonNotFoundException.class)
+    public ProblemDetail handlePokemonNotFound(PokemonNotFoundException exception) {
+        // The identifier was validated by the controller, so it is safe to echo it.
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
     }
 
     @ExceptionHandler(Exception.class)

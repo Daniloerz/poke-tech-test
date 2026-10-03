@@ -78,7 +78,7 @@ PokemonController
   → ListPokemonUseCase.list(page, size)
       → PokemonCatalogPort.listPage(offset, limit)          [cached: pokeapi-pages]
       → for each name, in parallel:
-          PokemonCatalogPort.findByName(name)               [cached: pokeapi-pokemon]
+          PokemonCatalogPort.findByIdOrName(name)           [cached: pokeapi-pokemon]
       → PokemonPage (original order)
   → PokemonRestMapper → PageResponse<PokemonSummaryResponse>
 ```
@@ -92,14 +92,14 @@ PokemonController
 
 - `PokemonCatalogPort` (out port):
   - `PokemonCatalogPage listPage(long offset, int limit)`: one PokeAPI page of names and the total count.
-  - `Optional<Pokemon> findByName(String name)`: empty when PokeAPI answers 404 (`findXxx` returns `Optional`, global Java rule). US02 will use the empty case for its `404`.
+  - `Optional<Pokemon> findByIdOrName(String idOrName)` (named `findByName` until US02, which added lookups by id): empty when PokeAPI answers 404 (`findXxx` returns `Optional`, global Java rule). US02 will use the empty case for its `404`.
   - Both throw `ExternalServiceException` when PokeAPI is not available.
 - `PokemonCatalogPage` (record): `names` and `totalCount`. It is the result of the port, not a domain concept.
 - `ListPokemonUseCase`:
   - Computes `offset = (long) page * size`, so a very large `page` cannot overflow `int`.
-  - Calls `listPage`, then `findByName` for each name with `CompletableFuture.supplyAsync(..., executor)` on a virtual-thread executor (TDR-002).
+  - Calls `listPage`, then `findByIdOrName` for each name with `CompletableFuture.supplyAsync(..., executor)` on a virtual-thread executor (TDR-002).
   - Joins the futures in list order. If a future fails, it rethrows the original cause.
-  - A listed name that `findByName` cannot find is an inconsistent catalog: `ExternalServiceException` (`502`).
+  - A listed name that `findByIdOrName` cannot find is an inconsistent catalog: `ExternalServiceException` (`502`).
 - `ExternalServiceException`: business exception for "external catalog not available". The use case does not know about HTTP.
 
 ## Infrastructure

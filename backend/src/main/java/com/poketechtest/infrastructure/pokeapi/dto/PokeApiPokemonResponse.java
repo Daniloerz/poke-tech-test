@@ -7,8 +7,11 @@ import java.util.List;
 public record PokeApiPokemonResponse(
         int id,
         String name,
+        int height,
         int weight,
+        PokeApiNamedResource species,
         PokeApiSprites sprites,
         List<PokeApiTypeSlot> types,
+        List<PokeApiStatSlot> stats,
         List<PokeApiMoveSlot> moves) {
 }

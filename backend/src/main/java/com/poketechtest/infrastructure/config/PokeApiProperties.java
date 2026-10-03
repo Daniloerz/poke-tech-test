@@ -12,5 +12,6 @@ public record PokeApiProperties(
         @NotBlank String baseUrl,
         @NotNull Duration connectTimeout,
         @NotNull Duration readTimeout,
-        @NotNull Duration cacheTtl) {
+        @NotNull Duration cacheTtl,
+        @NotBlank String spriteBaseUrl) {
 }
