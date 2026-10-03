@@ -3,10 +3,15 @@ package com.poketechtest.infrastructure.persistence;
 import com.poketechtest.application.exception.PokemonAlreadySyncedException;
 import com.poketechtest.application.port.out.LocalPokemonRepository;
 import com.poketechtest.domain.model.LocalPokemon;
+import com.poketechtest.domain.model.PageResult;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -14,6 +19,7 @@ import org.springframework.stereotype.Component;
 public class LocalPokemonRepositoryAdapter implements LocalPokemonRepository {
 
     static final String POKE_API_ID_UNIQUE_CONSTRAINT = "uk_local_pokemon_poke_api_id";
+    private static final String ID_PROPERTY = "id";
 
     private final LocalPokemonJpaRepository localPokemonJpaRepository;
     private final LocalPokemonEntityMapper localPokemonEntityMapper;
@@ -26,6 +32,24 @@ public class LocalPokemonRepositoryAdapter implements LocalPokemonRepository {
     @Override
     public Optional<LocalPokemon> findByPokeApiId(int pokeApiId) {
         return localPokemonJpaRepository.findByPokeApiId(pokeApiId).map(localPokemonEntityMapper::toDomain);
+    }
+
+    @Override
+    public PageResult<LocalPokemon> findPage(int page, int size) {
+        Page<LocalPokemonEntity> entities = localPokemonJpaRepository.findAll(PageRequest.of(page, size, Sort.by(ID_PROPERTY)));
+        List<LocalPokemon> items = entities.getContent().stream().map(localPokemonEntityMapper::toDomain).toList();
+        return new PageResult<>(items, page, size, entities.getTotalElements());
+    }
+
+    @Override
+    public LocalPokemon update(LocalPokemon localPokemon) {
+        // Merge of the full entity; synced_at is not updatable and updated_at is refreshed by Hibernate.
+        return localPokemonEntityMapper.toDomain(localPokemonJpaRepository.saveAndFlush(localPokemonEntityMapper.toEntity(localPokemon)));
+    }
+
+    @Override
+    public void deleteById(long id) {
+        localPokemonJpaRepository.deleteById(id);
     }
 
     @Override

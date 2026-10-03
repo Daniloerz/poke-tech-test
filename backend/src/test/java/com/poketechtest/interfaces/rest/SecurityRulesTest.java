@@ -14,7 +14,7 @@ import com.poketechtest.application.usecase.GetPokemonDetailUseCase;
 import com.poketechtest.application.usecase.ListPokemonUseCase;
 import com.poketechtest.application.usecase.LoginUseCase;
 import com.poketechtest.application.usecase.RegisterUserUseCase;
-import com.poketechtest.domain.model.PokemonPage;
+import com.poketechtest.domain.model.PageResult;
 import com.poketechtest.domain.model.User;
 import com.poketechtest.infrastructure.security.JwtProperties;
 import com.poketechtest.infrastructure.security.JwtTokenIssuer;
@@ -63,7 +63,7 @@ class SecurityRulesTest {
 
     @Test
     void theCatalogIsPublic() throws Exception {
-        when(listPokemonUseCase.list(anyInt(), anyInt())).thenReturn(new PokemonPage(List.of(), 0, 20, 0));
+        when(listPokemonUseCase.list(anyInt(), anyInt())).thenReturn(new PageResult<>(List.of(), 0, 20, 0));
 
         mockMvc.perform(get("/api/v1/pokemon")).andExpect(status().isOk());
     }

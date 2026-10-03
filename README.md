@@ -4,7 +4,7 @@ REST API built with Java and Spring Boot that integrates [PokeAPI](https://pokea
 
 The exercise statement is in [`java_technical_interview_exercise.md`](java_technical_interview_exercise.md).
 
-> **Status:** backend in progress. Done: US01 (Pokemon list), US02 (Pokemon detail), user registration and JWT authentication, US03 (synchronization to the local database). The frontend will start once the backend is complete.
+> **Status:** backend in progress. Done: US01 (Pokemon list), US02 (Pokemon detail), user registration and JWT authentication, US03 (synchronization to the local database), US04 (local list, update and delete). The frontend will start next.
 
 ## Stack
 
@@ -65,8 +65,13 @@ Interactive documentation (Swagger UI): `http://localhost:8080/swagger-ui.html`
 | `GET` | `/api/v1/auth/me` | Token | Auth | The authenticated user. |
 | `POST` | `/api/v1/local-pokemon` | Token | US03 | Copy a Pokemon from PokeAPI into the local database: `{"idOrName": "pikachu"}`. `409` if it is already local. |
 | `GET` | `/api/v1/local-pokemon/{id}` | Token | US03 | A local Pokemon (PokeAPI snapshot plus `localizedName`, `region`, `tags`). |
+| `GET` | `/api/v1/local-pokemon?page=0&size=20` | Token | US04 | Paginated list of local Pokemon, ordered by id. |
+| `PUT` | `/api/v1/local-pokemon/{id}` | Token | US04 | Replace the proprietary fields: `{"localizedName", "region", "tags"}`. The PokeAPI snapshot is not editable. |
+| `DELETE` | `/api/v1/local-pokemon/{id}` | Token | US04 | Delete a local Pokemon (`204`). It can be synchronized again. |
 
-Errors use the RFC 9457 Problem Details format (`application/problem+json`): `400` for invalid input, `401` for bad credentials or a missing/invalid token, `404` when the Pokemon does not exist, `409` when a username is taken or a Pokemon is already local, `502` when PokeAPI is not available, `500` for unexpected errors.
+Errors use the RFC 9457 Problem Details format (`application/problem+json`): `400` for invalid input or unknown fields, `401` for bad credentials or a missing/invalid token, `404` when the Pokemon does not exist, `409` when a username is taken or a Pokemon is already local, `502` when PokeAPI is not available, `500` for unexpected errors.
+
+Request bodies are strict: an unknown field returns `400` with the field name.
 
 PokeAPI responses are cached in Redis for 24 hours. If Redis is down, the API still works without the cache.
 
