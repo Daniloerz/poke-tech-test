@@ -130,6 +130,7 @@ It is an industry standard, needs little code, and gives the same format for our
 ### Consequences
 
 - Validation errors add an `errors` list (`field`, `message`).
+- Messages are always in English: `spring.web.locale: en` with a fixed locale resolver, so Bean Validation does not translate them according to the browser `Accept-Language` header (found when the frontend was checked in a Spanish browser).
 - `500` responses use a generic `detail`; the real cause is only in the log.
 
 ---

@@ -11,6 +11,10 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+  web:
+    # The API answers in English: validation messages do not follow the browser Accept-Language header.
+    locale: en
+    locale-resolver: fixed
   jackson:
     deserialization:
       # Strict request bodies: an unknown field is a client mistake, not something to ignore.
