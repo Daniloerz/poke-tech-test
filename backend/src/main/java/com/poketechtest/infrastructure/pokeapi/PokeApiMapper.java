@@ -77,7 +77,7 @@ public interface PokeApiMapper {
         return new EvolutionNode(speciesId, toName(link.species()), spriteBaseUrl + "/" + speciesId + ".png", evolvesTo);
     }
 
-    // PokeAPI orders flavor texts by game version: the last English entry is the most recent one (US02 TDR-003).
+    // PokeAPI orders flavor texts by game version: the last English entry is the most recent one.
     private String latestEnglishDescription(List<PokeApiFlavorText> flavorTexts) {
         if (flavorTexts == null) {
             return null;

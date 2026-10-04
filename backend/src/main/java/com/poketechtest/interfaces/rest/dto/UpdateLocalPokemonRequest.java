@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 
-/** Replaces the proprietary fields. The PokeAPI snapshot is not editable: any other field is rejected (US04 TDR-002). */
+/** Replaces the proprietary fields. The PokeAPI snapshot is not editable: any other field is rejected. */
 public record UpdateLocalPokemonRequest(
         @Schema(description = "Localized name; null clears it", example = "Pikachu", nullable = true)
         @Size(max = 100)

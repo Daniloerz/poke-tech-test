@@ -65,7 +65,7 @@ public class LocalPokemonRepositoryAdapter implements LocalPokemonRepository {
             LocalPokemonEntity saved = localPokemonJpaRepository.saveAndFlush(localPokemonEntityMapper.toEntity(localPokemon));
             return localPokemonEntityMapper.toDomain(saved);
         } catch (DataIntegrityViolationException exception) {
-            // Two synchronizations of the same Pokemon at the same time: the unique constraint wins (US03 TDR-002).
+            // Two synchronizations of the same Pokemon at the same time: the unique constraint wins.
             if (ConstraintViolations.isViolationOf(exception, POKE_API_ID_UNIQUE_CONSTRAINT)) {
                 throw new PokemonAlreadySyncedException(localPokemon.name(), null);
             }

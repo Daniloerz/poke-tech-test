@@ -38,6 +38,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     static final String ACCESS_DENIED_DETAIL = "You are not allowed to perform this operation.";
 
     private static final String ERRORS_PROPERTY = "errors";
+    private static final String LOCAL_ID_PROPERTY = "localId";
     private static final String BEARER_CHALLENGE = "Bearer";
     private static final String UNKNOWN_FIELD_MESSAGE = "is not a recognized field";
 
@@ -58,7 +59,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(PokemonAlreadySyncedException.class)
     public ProblemDetail handlePokemonAlreadySynced(PokemonAlreadySyncedException exception) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+        // Lets a client link to the existing record without parsing the detail text.
+        if (exception.getLocalId() != null) {
+            problemDetail.setProperty(LOCAL_ID_PROPERTY, exception.getLocalId());
+        }
+        return problemDetail;
     }
 
     @ExceptionHandler(LocalPokemonNotFoundException.class)

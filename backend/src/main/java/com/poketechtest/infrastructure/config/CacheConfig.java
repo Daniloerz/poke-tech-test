@@ -21,7 +21,7 @@ import org.springframework.data.redis.serializer.RedisSerializationContext.Seria
 @EnableCaching
 public class CacheConfig implements CachingConfigurer {
 
-    // Bump the version when a cached class changes, so entries with the old shape are never read (US02 TDR-004).
+    // Bump the version when a cached class changes, so entries with the old shape are never read.
     private static final String CACHE_VERSION = "v2";
     private static final String KEY_PREFIX = "poke-tech-test::" + CACHE_VERSION + "::";
 

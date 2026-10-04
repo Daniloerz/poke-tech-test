@@ -38,7 +38,7 @@ This feature creates the local Pokemon table and the "create" and "read one" ope
 | AC-01 | Body `{"idOrName": "pikachu"}` (id or name, case-insensitive) copies the Pokemon from PokeAPI and returns `201` with the local record and `Location: /api/v1/local-pokemon/{id}`. |
 | AC-02 | The local record has: local `id`, `pokeApiId`, `name`, `spriteUrl`, `types`, `heightM`, `weightKg`, the proprietary fields `localizedName`, `region`, `tags`, and the audit fields `syncedAt`, `updatedAt`. |
 | AC-03 | After synchronization the proprietary fields are empty: `localizedName` and `region` are `null`, `tags` is `[]`. They are filled with US04. |
-| AC-04 | A Pokemon that is already local (same `pokeApiId`, requested by id or by name) returns `409` and does not change the stored record. The response says the local id of the existing record. |
+| AC-04 | A Pokemon that is already local (same `pokeApiId`, requested by id or by name) returns `409` and does not change the stored record. The response gives the local id of the existing record in the `detail` text and in a `localId` property, so a client can link to it. |
 | AC-05 | An identifier that does not exist in PokeAPI returns `404`. |
 | AC-06 | A missing, blank or invalid `idOrName` (characters other than letters, digits and hyphens, or more than 50) returns `400`. A malformed body returns `400`. |
 | AC-07 | If PokeAPI is not available, the API returns `502` and nothing is stored. |
