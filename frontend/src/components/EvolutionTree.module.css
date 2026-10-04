@@ -1,0 +1,41 @@
+.node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius);
+  color: inherit;
+  text-decoration: none;
+  text-transform: capitalize;
+}
+
+.stage:hover {
+  background: var(--color-background);
+  color: var(--color-primary);
+}
+
+.children {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1rem;
+  margin-top: 0.25rem;
+  padding-top: 1.25rem;
+  border-top: 2px solid var(--color-border);
+  position: relative;
+}
+
+.children::before {
+  content: '↓';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--color-muted);
+}

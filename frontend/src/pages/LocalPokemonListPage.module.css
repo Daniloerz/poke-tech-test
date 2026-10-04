@@ -1,0 +1,51 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.info :global(.tag-list) {
+  margin-top: 0.25rem;
+}
+
+.name {
+  margin: 0 0 0.25rem;
+  font-size: 1.125rem;
+  text-transform: capitalize;
+}
+
+.localized {
+  color: var(--color-muted);
+  font-weight: 400;
+  text-transform: none;
+}
+
+.meta {
+  margin: 0.25rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
