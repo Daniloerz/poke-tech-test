@@ -12,8 +12,8 @@ frontend/
     ├── index.css                global styles (variables, layout, buttons, forms)
     ├── api/                     client.js (fetch wrapper, errors, token), one file per backend resource
     ├── auth/                    AuthContext.jsx (login state), RequireAuth.jsx (protected routes)
-    ├── hooks/                   useApi.js (loading / error / data for one request)
-    ├── components/              Layout, Pagination, StatusMessage, PokemonCard, EvolutionTree
+    ├── hooks/                   useApi.js (loading / error / data for one request), usePageParam.js (page in the URL)
+    ├── components/              Layout, Pagination, StatusMessage, PokemonCard, TypeList, EvolutionTree
     └── pages/                   one component per route
 ```
 
@@ -42,6 +42,10 @@ page → useApi(() => api function) → client.js → fetch('/api/v1/...') → p
 
 ## Validation
 
-- `corepack yarn build` without errors or warnings.
+- `corepack yarn build` without errors or warnings (47 modules, about 88 kB of JavaScript gzipped).
 - Manual check in the browser of every screen and its loading, error and empty states; no warnings in the console.
 - `docker compose up --build` with the four services.
+
+Result of the manual check (Docker Compose, desktop and mobile 375 px): catalog grid and pagination (last page 68 of 68), Eevee detail with its 8 branches, login error and success (returns to the previous page), "Save to My Pokemon" success (opens the edit page) and conflict (link to the existing record), edit with a backend field error and a valid save, delete and save again, register with field errors, a taken username and success (automatic login), logout, protected route redirect, an invalid token (logged out), unknown Pokemon and unknown route. The console only shows the browser's network log of the error responses caused on purpose (401, 400, 409, 404); no React warnings.
+
+The check found a backend problem: validation messages followed the browser language (`Accept-Language: es` gave Spanish messages). The backend now uses a fixed English locale (US01 TDR-004).

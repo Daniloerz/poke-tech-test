@@ -16,3 +16,4 @@ Notes:
 - Page size is 20 (the backend default).
 - Stat bars use the stat value over 255 (the highest possible base stat) as width.
 - Images have `alt` texts and `loading="lazy"`.
+- Known limitation: some alternative forms (ids over 10000) have a sprite URL in PokeAPI whose image does not exist; the card then shows an empty image area.
