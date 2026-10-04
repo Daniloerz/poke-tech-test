@@ -4,7 +4,12 @@
 
 # 0. Decisiones aprobadas en la Fase 0 (prevalecen sobre el resto del documento)
 
-1. **Frontend diferido:** no crear, inicializar ni modificar nada del frontend (`frontend/`, Dockerfile, servicio en Compose, docs de frontend) hasta que el backend esté **completamente terminado** y el usuario lo apruebe. Esto aplica también a la Fase 1 (bootstrap) y al paso 7 de la sección 24.
+1. **Frontend:** aprobado tras terminar el backend (2026-10-04). Reglas del frontend (prevalecen sobre las secciones 15, 17, 25 y 26 en lo que se refiere al frontend):
+   - **JavaScript** (sin TypeScript), React + Vite + React Router, **CSS Modules**, `fetch` + hooks propios, interfaz en **inglés**.
+   - **Sin tests de frontend.** La validación es `yarn build` + revisión manual en el navegador (sin warnings en la consola).
+   - **Lo más básico posible** para poder explicarlo en lo esencial: buenas prácticas sin sobreingeniería, pocas abstracciones, pocas dependencias.
+   - Comunicación con el backend por **proxy** (Vite en desarrollo, nginx en Docker): sin CORS. Token JWT en `sessionStorage`.
+   - Yarn 4 mediante `corepack yarn`.
 2. **Java 21 (LTS)** reemplaza a Java 17 como baseline. JDK local portable en `C:\Users\Danilo Ramirez\hangara_development_tools\OpenJDK21\jdk-21.0.12.1+1`. No cambiar `JAVA_HOME`/`PATH` globales: fijar `JAVA_HOME` solo en cada comando (`JAVA_HOME="<ruta>" ./mvnw ...`). Docker usa `eclipse-temurin:21`.
 3. **Yarn** se usa mediante `corepack yarn ...`, sin ejecutar `corepack enable`.
 4. **Proyecto personal:** las reglas globales de Ticket ID y de nombres de migraciones con Ticket ID **no aplican**. La trazabilidad se hace por historias de usuario.
@@ -20,6 +25,7 @@
 11. **Comentarios y commits en inglés:** todo comentario de código/configuración y todo commit message se escribe en inglés. El cuerpo del commit es opcional y tiene **máximo 3 bullets**, cada uno con una oración corta. Se mantiene la línea `Co-Authored-By`.
 12. **Testing:** por ahora solo tests unitarios con JUnit 5 + Mockito. No usar Testcontainers ni tests que necesiten Docker, BD o Redis reales (ver Pendientes). Esto prevalece sobre las secciones 17, 25 y 26 en lo relativo a tests de integración.
 13. **Documentación viva durante la implementación:** si al implementar se descubre un bloqueo, algo que no se tuvo en cuenta o un camino mejor, y el código se aparta de lo documentado, se actualizan **en ese mismo momento** los documentos afectados (`01-context.md`, `02-implementation-plan.md`, ADR, TDR, BDDR, README, este `CLAUDE.md`): cambiar, añadir o eliminar detalles. Nunca se deja una diferencia entre el código y la documentación para "después". Si el cambio afecta a una decisión ya aprobada por el usuario (contrato, arquitectura, alcance), se informa en el resumen de la feature.
+14. **Comentarios de código discretos:** nunca nombrar historias, criterios ni decisiones en el código (`US03`, `AC-04`, `TDR-002`, `BDDR-007`…). Los comentarios explican el porqué con palabras normales; la trazabilidad vive en `docs/`.
 
 ## Pendientes (backlog)
 
