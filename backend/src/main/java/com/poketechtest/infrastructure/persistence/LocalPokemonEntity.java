@@ -38,7 +38,7 @@ public class LocalPokemonEntity {
     @Column(name = "sprite_url", length = 500)
     private String spriteUrl;
 
-    // PostgreSQL text[] (BDDR-007).
+    // PostgreSQL text[]: the lists are stored in the row.
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "types", nullable = false)
     private List<String> types = new ArrayList<>();

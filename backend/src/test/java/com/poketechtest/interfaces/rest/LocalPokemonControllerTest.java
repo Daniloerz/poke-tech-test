@@ -223,7 +223,8 @@ class LocalPokemonControllerTest {
                         {"idOrName": "pikachu"}""")))
                 .andExpect(status().isConflict())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
-                .andExpect(jsonPath("$.detail").value("Pokemon already synchronized: pikachu (local id 4)"));
+                .andExpect(jsonPath("$.detail").value("Pokemon already synchronized: pikachu (local id 4)"))
+                .andExpect(jsonPath("$.localId").value(4));
     }
 
     @Test

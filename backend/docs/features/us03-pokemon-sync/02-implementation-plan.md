@@ -26,7 +26,7 @@
 }
 ```
 
-Errors (Problem Details): `400`, `401`, `404`, `409` (detail includes the existing local id), `502`.
+Errors (Problem Details): `400`, `401`, `404`, `409` (the existing local id is in `detail` and in the `localId` property; `localId` is missing only when two requests synchronize the same Pokemon at the same time), `502`.
 
 ### Why a body instead of `POST /api/v1/local-pokemon/{idOrName}` (Phase 0 wording)
 
