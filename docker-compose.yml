@@ -54,5 +54,14 @@ services:
       start_period: 30s
       retries: 10
 
+  # Serves the React build and forwards /api to the backend (same origin, no CORS).
+  frontend:
+    build: ./frontend
+    ports:
+      - "${FRONTEND_HOST_PORT:-3000}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+
 volumes:
   postgres-data:

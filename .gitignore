@@ -38,3 +38,10 @@ Thumbs.db
 
 # Local environment (use .env.example as template)
 .env
+
+# Frontend (Yarn 4 with the node-modules linker)
+node_modules/
+dist/
+**/.yarn/*
+!**/.yarn/patches
+.pnp.*

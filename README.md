@@ -1,25 +1,27 @@
 # Poke Tech Test
 
-REST API built with Java and Spring Boot that integrates [PokeAPI](https://pokeapi.co/docs/v2). It lets users browse Pokemon, see their details, copy them into a local PostgreSQL database and edit that local copy with their own fields.
+REST API built with Java and Spring Boot that integrates [PokeAPI](https://pokeapi.co/docs/v2), with a React frontend. It lets users browse Pokemon, see their details, copy them into a local PostgreSQL database and edit that local copy with their own fields.
 
 The exercise statement is in [`java_technical_interview_exercise.md`](java_technical_interview_exercise.md).
 
-> **Status:** backend complete. Done: US01 (Pokemon list), US02 (Pokemon detail), user registration and JWT authentication, US03 (synchronization to the local database), US04 (local list, update and delete). The frontend will start next.
+> **Status:** complete. Backend: US01 (Pokemon list), US02 (Pokemon detail), user registration and JWT authentication, US03 (synchronization to the local database), US04 (local list, update and delete). Frontend: catalog, detail, login/register and "My Pokemon" screens.
 
 ## Stack
 
 | Layer | Technology |
 |---|---|
 | Backend | Java 21, Spring Boot 4.1, Spring Security (JWT), Maven (wrapper), Lombok, MapStruct |
+| Frontend | React 19, Vite 8, React Router 7, CSS Modules, JavaScript, Yarn 4 (Corepack) |
 | Database | PostgreSQL 17, Liquibase migrations |
 | Cache | Redis 7.4 |
-| Tests | JUnit 5, Mockito |
-| Infrastructure | Docker, Docker Compose |
+| Tests | Backend: JUnit 5, Mockito. Frontend: no automated tests (manual check in the browser) |
+| Infrastructure | Docker, Docker Compose, nginx (serves the frontend and proxies `/api`) |
 
 ## Prerequisites
 
 - Docker with Docker Compose v2.
 - To run the backend or the tests outside Docker: JDK 21. Maven is not needed (use `./mvnw`).
+- To run the frontend outside Docker: Node.js 20 or newer (Corepack is included with Node; Yarn is not needed globally).
 
 ## Run everything with Docker Compose
 
@@ -33,7 +35,11 @@ Edit `.env` and set `POSTGRES_PASSWORD` and `JWT_SECRET` (at least 32 characters
 docker compose up --build
 ```
 
-Health check: `http://localhost:8080/actuator/health`
+| Service | URL |
+|---|---|
+| Frontend | `http://localhost:3000` |
+| API and Swagger UI | `http://localhost:8080/swagger-ui.html` |
+| Health check | `http://localhost:8080/actuator/health` |
 
 The database schema and the demo data are created by Liquibase when the backend starts.
 
@@ -51,6 +57,16 @@ Run the backend from the IDE or the terminal. The secrets have no default, so se
 cd backend
 DATABASE_PASSWORD=<your-password> JWT_SECRET=<at-least-32-characters> ./mvnw spring-boot:run
 ```
+
+Run the frontend in development mode (it forwards `/api` to `http://localhost:8080`; change it with `API_PROXY_TARGET`):
+
+```bash
+cd frontend
+corepack yarn install
+corepack yarn dev
+```
+
+Then open `http://localhost:5173`.
 
 ## API
 
@@ -109,6 +125,8 @@ All variables are documented in [`.env.example`](.env.example). `.env` is read o
 | `POSTGRES_HOST_PORT` | Compose | `5433` |
 | `REDIS_HOST_PORT` | Compose | `6380` |
 | `BACKEND_HOST_PORT` | Compose | `8080` |
+| `FRONTEND_HOST_PORT` | Compose | `3000` |
+| `API_PROXY_TARGET` | Frontend dev server | `http://localhost:8080` |
 | `DATABASE_URL` | Backend | `jdbc:postgresql://localhost:5433/pokemon` |
 | `DATABASE_USER` | Backend | `pokemon` |
 | `DATABASE_PASSWORD` | Backend | none (required) |
@@ -132,11 +150,19 @@ cd backend
 ./mvnw test
 ```
 
+The frontend has no automated tests (project decision, to keep it minimal). Check that it builds:
+
+```bash
+cd frontend
+corepack yarn build
+```
+
 ## Documentation map
 
 | Path | Content |
 |---|---|
-| `backend/docs/features/<feature>/` | Context, implementation plan, ADRs and TDRs of each feature |
+| `backend/docs/features/<feature>/` | Context, implementation plan, ADRs and TDRs of each backend feature |
+| `frontend/docs/features/<feature>/` | Screens, plan, ADR and TDRs of the frontend |
 | `backend/docs/bd/` | ERD, DDL, DML and database decisions (BDDR) |
 | `CLAUDE.md` | Instructions and approved decisions for the AI development agent |
 | `SUB-AGENTS.md` | Log of the work delegated to AI subagents and how it was reviewed |

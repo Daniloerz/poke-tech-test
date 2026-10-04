@@ -35,7 +35,7 @@ Lista viva de lo que se ha dejado para después. Añadir cada nuevo pendiente aq
 2. **Creación de Pokémon propios mediante `POST`** (sin pasar por la sincronización con PokeAPI).
 3. **Autorización por roles** (por ahora solo usuario autenticado).
 4. **Sección GenAI del reto** (prompt de la API de tareas, muestra de código, validación).
-5. **Frontend completo**, una vez terminado el backend.
+5. ~~**Frontend completo**~~ — hecho (2026-10-04).
 6. **Verificar el arranque local del backend desde el IDE** (fuera de Docker). El agente no pudo probarlo por una limitación de su sandbox; con Docker Compose sí está verificado.
 7. **Seed de demo solo en local:** usar un `context: demo` de Liquibase para los changesets de datos de demo (hoy se aplican en todos los entornos; ver BDDR-006).
 

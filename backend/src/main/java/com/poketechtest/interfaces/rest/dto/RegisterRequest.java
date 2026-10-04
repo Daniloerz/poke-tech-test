@@ -16,7 +16,7 @@ public record RegisterRequest(
         // BCrypt accepts at most 72 bytes; the limit is checked in bytes because "ñ" takes two.
         @Schema(example = "onix12345")
         @NotBlank
-        @Size(min = 8)
+        @Size(min = 8, message = "must have at least 8 characters")
         @MaxUtf8Bytes(72)
         String password) {
 

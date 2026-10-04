@@ -77,6 +77,15 @@ class AuthControllerTest {
     }
 
     @Test
+    void validationMessagesAreInEnglishWhateverTheBrowserLanguage() throws Exception {
+        mockMvc.perform(json(post(AUTH_PATH + "/register"), """
+                        {"username": "ab", "password": "short"}""").header("Accept-Language", "es-ES,es;q=0.9"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[?(@.field == 'username')].message").value("size must be between 3 and 30"))
+                .andExpect(jsonPath("$.errors[?(@.field == 'password')].message").value("must have at least 8 characters"));
+    }
+
+    @Test
     void registerRejectsAPasswordOutsideTheAllowedLength() throws Exception {
         mockMvc.perform(json(post(AUTH_PATH + "/register"), """
                         {"username": "brock", "password": "short"}"""))
