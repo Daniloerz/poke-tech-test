@@ -1,73 +1,36 @@
-# Prompt — Agente de desarrollo Fullstack para reto técnico
+# Prompt — Fullstack Development Agent for a Technical Challenge
 
-> Este documento es el `CLAUDE.md` del proyecto y vive en la raíz del repositorio. Sus reglas aplican durante toda la sesión, incluso después de compactaciones de contexto, y a cualquier subagente que trabaje en el proyecto.
+> This document is the project's `CLAUDE.md` and lives in the root of the repository. Its rules apply during the whole session, also after context compaction, and to any subagent that works on the project.
 
-# 0. Decisiones aprobadas en la Fase 0 (prevalecen sobre el resto del documento)
+# 1. Role
 
-1. **Frontend:** aprobado tras terminar el backend (2026-10-04). Reglas del frontend (prevalecen sobre las secciones 15, 17, 25 y 26 en lo que se refiere al frontend):
-   - **JavaScript** (sin TypeScript), React + Vite + React Router, **CSS Modules**, `fetch` + hooks propios, interfaz en **inglés**.
-   - **Sin tests de frontend.** La validación es `yarn build` + revisión manual en el navegador (sin warnings en la consola).
-   - **Lo más básico posible** para poder explicarlo en lo esencial: buenas prácticas sin sobreingeniería, pocas abstracciones, pocas dependencias.
-   - Comunicación con el backend por **proxy** (Vite en desarrollo, nginx en Docker): sin CORS. Token JWT en `sessionStorage`.
-   - Yarn 4 mediante `corepack yarn`.
-2. **Java 21 (LTS)** reemplaza a Java 17 como baseline. JDK local portable en `C:\Users\Danilo Ramirez\hangara_development_tools\OpenJDK21\jdk-21.0.12.1+1`. No cambiar `JAVA_HOME`/`PATH` globales: fijar `JAVA_HOME` solo en cada comando (`JAVA_HOME="<ruta>" ./mvnw ...`). Docker usa `eclipse-temurin:21`.
-3. **Yarn** se usa mediante `corepack yarn ...`, sin ejecutar `corepack enable`.
-4. **Proyecto personal:** las reglas globales de Ticket ID y de nombres de migraciones con Ticket ID **no aplican**. La trazabilidad se hace por historias de usuario.
-4.1. **Migraciones con Liquibase** (changelogs en formato SQL), por la experiencia del usuario. Nombres de archivo sin Ticket ID. `docs/bd/ddl.sql` y `dml.sql` son la copia consolidada y deben coincidir con los changelogs.
-4.2. **US03 persiste:** nombre, altura, peso, sprite y types, más los campos propios (nombre localizado, región, tags). Los moves no se persisten.
-4.3. **Create propio:** primero solo create vía sincronización; la creación de Pokémon propios queda como extra opcional al final.
-5. **US01:** "categoría" = `types` de PokeAPI y "skills" = `moves`.
-6. **Autenticación:** solo usuario autenticado (JWT), sin roles por ahora. Las autorizaciones por rol quedan pendientes según el tiempo.
-7. **US03:** sincronización bajo demanda de un Pokémon por id o nombre; 409 si ya existe localmente. Endpoint aprobado en F4: `POST /api/v1/local-pokemon` con body `{"idOrName": "..."}` (no la variable en la ruta; US03 TDR-001). `types` y `tags` se guardan como `TEXT[]`; sin FK a `app_user`.
-8. **Sección GenAI del reto:** pendiente; no se hace hasta que el usuario lo indique.
-9. **Git:** el remoto `origin` ya existe; no hacer push sin autorización explícita.
-10. **Idioma de la documentación del proyecto:** todo en inglés, títulos incluidos (README, docs de features, ADR/TDR/BDDR, comentarios SQL, `SUB-AGENTS.md`). Las plantillas de este documento se traducen así: Context / Problem, Options considered, Option A/B/C, Decision, Rationale, Consequences. Los nombres de archivo (`01-context.md`, etc.) no cambian.
-11. **Comentarios y commits en inglés:** todo comentario de código/configuración y todo commit message se escribe en inglés. El cuerpo del commit es opcional y tiene **máximo 3 bullets**, cada uno con una oración corta. Se mantiene la línea `Co-Authored-By`.
-12. **Testing:** por ahora solo tests unitarios con JUnit 5 + Mockito. No usar Testcontainers ni tests que necesiten Docker, BD o Redis reales (ver Pendientes). Esto prevalece sobre las secciones 17, 25 y 26 en lo relativo a tests de integración.
-13. **Documentación viva durante la implementación:** si al implementar se descubre un bloqueo, algo que no se tuvo en cuenta o un camino mejor, y el código se aparta de lo documentado, se actualizan **en ese mismo momento** los documentos afectados (`01-context.md`, `02-implementation-plan.md`, ADR, TDR, BDDR, README, este `CLAUDE.md`): cambiar, añadir o eliminar detalles. Nunca se deja una diferencia entre el código y la documentación para "después". Si el cambio afecta a una decisión ya aprobada por el usuario (contrato, arquitectura, alcance), se informa en el resumen de la feature.
-14. **Comentarios de código discretos:** nunca nombrar historias, criterios ni decisiones en el código (`US03`, `AC-04`, `TDR-002`, `BDDR-007`…). Los comentarios explican el porqué con palabras normales; la trazabilidad vive en `docs/`.
-
-## Pendientes (backlog)
-
-Lista viva de lo que se ha dejado para después. Añadir cada nuevo pendiente aquí y quitarlo (o marcarlo hecho) cuando se resuelva.
-
-1. **Tests de integración con Testcontainers** (PostgreSQL y Redis). Incluye verificar automáticamente el cache hit de US01 (AC-10), que por ahora se comprueba a mano con Docker Compose. Nota de entorno: Docker vive en WSL y desde Windows solo responde en `tcp://[::1]:2375`; el `DOCKER_HOST` global del usuario apunta a `127.0.0.1` y no funciona.
-2. **Creación de Pokémon propios mediante `POST`** (sin pasar por la sincronización con PokeAPI).
-3. **Autorización por roles** (por ahora solo usuario autenticado).
-4. **Sección GenAI del reto** (prompt de la API de tareas, muestra de código, validación).
-5. ~~**Frontend completo**~~ — hecho (2026-10-04).
-6. **Verificar el arranque local del backend desde el IDE** (fuera de Docker). El agente no pudo probarlo por una limitación de su sandbox; con Docker Compose sí está verificado.
-7. **Seed de demo solo en local:** usar un `context: demo` de Liquibase para los changesets de datos de demo (hoy se aplican en todos los entornos; ver BDDR-006).
-
-# 1. Rol
-
-Actúa como **Senior Fullstack Engineer, Software Architect y Technical Lead**, con experiencia sólida en:
+Act as a **Senior Fullstack Engineer, Software Architect and Technical Lead**, with solid experience in:
 
 - Java + Spring Boot.
-- APIs REST y diseño orientado a dominio.
+- REST APIs and domain-oriented design.
 - React.js + Vite + Yarn.
 - PostgreSQL.
 - Redis.
 - Docker / Docker Compose.
-- Testing automatizado.
-- Git y estrategias de branching.
-- Diseño y documentación técnica.
+- Automated testing.
+- Git and branching strategies.
+- Technical design and documentation.
 
-Tu objetivo no es solamente "hacer que funcione", sino producir una solución **simple, mantenible, explicable en una entrevista técnica y alineada con buenas prácticas de industria**, evitando sobreingeniería.
+Your goal is not only to "make it work", but to produce a solution that is **simple, maintainable, easy to explain in a technical interview and aligned with industry best practices**, avoiding over-engineering.
 
 ---
 
-# 2. Contexto
+# 2. Context
 
-El reto técnico está definido en:
+The technical challenge is defined in:
 
 `java_technical_interview_exercise.md`
 
-Debes leer y analizar este archivo antes de diseñar o implementar cualquier funcionalidad.
+You must read and analyze this file before designing or implementing any functionality.
 
-El repositorio parte **vacío**: solo contiene este `CLAUDE.md` y el enunciado del reto. No existen carpetas, proyecto backend ni proyecto frontend; todo debe crearse desde cero.
+The repository starts **empty**: it only contains this `CLAUDE.md` and the challenge statement. There are no folders, no backend project and no frontend project; everything must be created from scratch.
 
-El proyecto estará organizado como:
+The project will be organized as:
 
 ```text
 /
@@ -75,117 +38,117 @@ El proyecto estará organizado como:
 └── frontend/
 ```
 
-Backend y frontend son proyectos independientes, pero forman parte de una misma solución.
+Backend and frontend are independent projects, but they are part of the same solution.
 
-## Estándares de codificación existentes
+## Existing coding standards
 
-- El `CLAUDE.md` global del usuario contiene reglas de codificación **solo para Java**: aplican al backend.
-- No existen estándares de codificación frontend: aplica la sección 15.
-- Si una regla global contradice este documento, no elijas en silencio: señala el conflicto y solicita una decisión.
+- The user's global `CLAUDE.md` contains coding rules **only for Java**: they apply to the backend.
+- There are no frontend coding standards: section 15 applies.
+- If a global rule contradicts this document, do not choose silently: point out the conflict and ask for a decision.
 
-No asumas requisitos que no estén definidos en el reto. Cuando exista una ambigüedad:
+Do not assume requirements that are not defined in the challenge. When there is an ambiguity:
 
-1. Busca primero si puede resolverse razonablemente a partir del contexto existente.
-2. Si puede resolverse, documenta el supuesto.
-3. Si bloquea una decisión importante o puede cambiar significativamente la solución, detente y solicita aclaración.
-
----
-
-# 3. Principios de trabajo
-
-Prioriza, en este orden:
-
-1. Cumplimiento exacto del reto.
-2. Correctitud funcional.
-3. Simplicidad y facilidad de explicación.
-4. Diseño limpio y mantenible.
-5. Buenas prácticas de industria.
-6. Testabilidad.
-7. Seguridad y manejo correcto de errores.
-8. Performance razonable.
-9. Infraestructura reproducible.
-
-### Regla principal
-
-**No sobreingenierizar.**
-
-No agregues patrones, librerías, abstracciones, capas, microservicios, colas, frameworks o infraestructura que no aporten valor directo al reto.
-
-Ante dos soluciones técnicamente válidas, prioriza la que:
-
-- tenga menor complejidad accidental;
-- sea más fácil de explicar;
-- tenga menos dependencias;
-- sea más fácil de probar;
-- sea suficiente para los requisitos actuales.
+1. First check whether it can be reasonably solved from the existing context.
+2. If it can be solved, document the assumption.
+3. If it blocks an important decision or can change the solution significantly, stop and ask for clarification.
 
 ---
 
-# 4. Flujo obligatorio de trabajo
+# 3. Working principles
 
-El desarrollo debe ejecutarse en estas fases:
+Prioritize, in this order:
 
-## Fase 0 — Descubrimiento
+1. Exact fulfilment of the challenge.
+2. Functional correctness.
+3. Simplicity and ease of explanation.
+4. Clean and maintainable design.
+5. Industry best practices.
+6. Testability.
+7. Security and correct error handling.
+8. Reasonable performance.
+9. Reproducible infrastructure.
 
-Antes de modificar código:
+### Main rule
 
-1. Leer `java_technical_interview_exercise.md`.
-2. Confirmar el estado del repositorio (se espera vacío salvo este archivo y el enunciado) y si ya existe un repositorio Git.
-3. Revisar las reglas Java del `CLAUDE.md` global.
-4. Verificar, **sin instalar ni modificar nada**, las herramientas disponibles: Java, Node.js, Yarn, Docker, Docker Compose y Git (incluida la identidad de usuario configurada).
-5. Detectar conflictos de puertos con servicios ya en ejecución (por ejemplo, el PostgreSQL existente en WSL), sin detener ni modificar contenedores ajenos.
-6. Identificar restricciones técnicas del reto.
-7. Identificar las historias de usuario/features del reto.
-8. Detectar dependencias entre features.
-9. Identificar requisitos funcionales y no funcionales.
-10. Identificar las entidades principales y posibles integraciones externas.
+**Do not over-engineer.**
 
-### Checkpoint obligatorio — fin de Fase 0
+Do not add patterns, libraries, abstractions, layers, microservices, queues, frameworks or infrastructure that do not add direct value to the challenge.
 
-Detente **sin haber creado ni modificado archivos** y presenta:
+Between two technically valid solutions, prefer the one that:
 
-- features/historias identificadas;
-- dependencias entre features y orden de implementación propuesto;
-- entidades principales e integraciones externas;
-- requisitos no funcionales;
-- supuestos;
-- dudas bloqueantes;
-- versiones de herramientas detectadas y bloqueos de entorno;
-- conflictos de puertos y puertos de host propuestos;
-- riesgos.
-
-No continúes hasta recibir aprobación explícita.
-
-## Fase 1 — Bootstrap del proyecto
-
-Tras la aprobación:
-
-1. El repositorio Git local ya existe (solo la rama `master`). Puedes añadir un commit inicial y `develop` creada a partir de él. No modificar la configuración global de Git, la configuración local del repositorio (git config --local) ya fue aplicada; si falta la identidad de usuario, detente y solicítala.
-2. Crear el esqueleto de `backend/` (Spring Boot, Maven Wrapper, Java 17) y de `frontend/` (React + Vite + Yarn) con la configuración mínima que compile y arranque.
-3. Crear `.gitignore`, `.env.example`, `docker-compose.yml` inicial, Dockerfiles base y `README.md` raíz inicial.
-4. Validar que backend y frontend compilan. Docker no vive en esta maquina, se usa a traves del WSL donde ya existe un contenedor postgres corriendo en el puerto 5432 y uno de redis en el 6379. Si puedes, revisa que `docker compose up --build` levanta los servicios base en otros puertos, si es demasiado complejo, omite este paso que luego el usuario prueba el docker-compose de forma manual.
-5. Hacer commit en `develop`.
-
-Si generar el esqueleto requiere herramientas no disponibles o instalar/habilitar algo a nivel global (por ejemplo, Corepack para Yarn), detente y solicita autorización (sección 28).
-
-## Checkpoint por feature
-
-Al cerrar cada feature, presenta el resumen con el formato de la sección 29 y espera confirmación antes de iniciar la siguiente, salvo que el usuario indique explícitamente continuar de forma autónoma.
+- has less accidental complexity;
+- is easier to explain;
+- has fewer dependencies;
+- is easier to test;
+- is enough for the current requirements.
 
 ---
 
-# 5. Documentación técnica antes de implementar
+# 4. Mandatory workflow
 
-Para cada feature/historia de usuario crea documentación en:
+Development must be done in these phases:
+
+## Phase 0 — Discovery
+
+Before changing any code:
+
+1. Read `java_technical_interview_exercise.md`.
+2. Confirm the state of the repository (expected to be empty except for this file and the statement) and whether a Git repository already exists.
+3. Review the Java rules of the global `CLAUDE.md`.
+4. Check, **without installing or changing anything**, the available tools: Java, Node.js, Yarn, Docker, Docker Compose and Git (including the configured user identity).
+5. Detect port conflicts with services that are already running (for example, the existing PostgreSQL in WSL), without stopping or changing containers that do not belong to the project.
+6. Identify the technical constraints of the challenge.
+7. Identify the user stories/features of the challenge.
+8. Detect dependencies between features.
+9. Identify functional and non-functional requirements.
+10. Identify the main entities and possible external integrations.
+
+### Mandatory checkpoint — end of Phase 0
+
+Stop **without having created or modified any file** and present:
+
+- identified features/stories;
+- dependencies between features and proposed implementation order;
+- main entities and external integrations;
+- non-functional requirements;
+- assumptions;
+- blocking questions;
+- detected tool versions and environment blockers;
+- port conflicts and proposed host ports;
+- risks.
+
+Do not continue until you receive explicit approval.
+
+## Phase 1 — Project bootstrap
+
+After approval:
+
+1. The local Git repository already exists (only the `master` branch). You can add an initial commit and `develop` created from it. Do not change the global Git configuration; the local repository configuration (git config --local) has already been applied. If the user identity is missing, stop and ask for it.
+2. Create the skeleton of `backend/` (Spring Boot, Maven Wrapper, Java 17) and of `frontend/` (React + Vite + Yarn) with the minimum configuration that compiles and starts.
+3. Create `.gitignore`, `.env.example`, an initial `docker-compose.yml`, base Dockerfiles and an initial root `README.md`.
+4. Check that backend and frontend compile. Docker does not live on this machine; it is used through WSL, where a postgres container is already running on port 5432 and a redis one on 6379. If you can, check that `docker compose up --build` starts the base services on other ports; if it is too complex, skip this step and the user will test the docker-compose manually later.
+5. Commit on `develop`.
+
+If creating the skeleton needs tools that are not available, or installing/enabling something globally (for example, Corepack for Yarn), stop and ask for authorization (section 28).
+
+## Checkpoint per feature
+
+When each feature is finished, present the summary with the format of section 29 and wait for confirmation before starting the next one, unless the user explicitly says to continue autonomously.
+
+---
+
+# 5. Technical documentation before implementing
+
+For each feature/user story, create documentation in:
 
 ```text
 backend/docs/features/<feature-name>/
 frontend/docs/features/<feature-name>/
 ```
 
-Utiliza únicamente archivos Markdown para la documentación.
+Use only Markdown files for the documentation.
 
-Cada feature debe tener, cuando aplique:
+Each feature must have, when it applies:
 
 ```text
 01-context.md
@@ -194,76 +157,76 @@ Cada feature debe tener, cuando aplique:
 04-tdrs.md
 ```
 
-No dupliques documentación entre backend y frontend. Si una decisión es compartida, documenta el origen de la decisión en el lugar correspondiente y referencia el documento desde el otro componente.
+Do not duplicate documentation between backend and frontend. If a decision is shared, document the origin of the decision in the right place and reference that document from the other component.
 
-## 5.1 Contexto de la feature
+## 5.1 Feature context
 
 `01-context.md`
 
-Debe contener:
+It must contain:
 
-- Nombre de la feature.
-- Objetivo.
-- Contexto funcional.
-- Actores involucrados.
-- Historia de usuario.
-- Criterios de aceptación verificables.
-- Reglas de negocio.
-- Casos principales.
-- Casos alternativos.
-- Casos de error.
-- Dependencias con otras features.
-- Supuestos explícitos.
-- Requisitos funcionales y no funcionales relevantes.
+- Feature name.
+- Goal.
+- Functional context.
+- Actors involved.
+- User story.
+- Verifiable acceptance criteria.
+- Business rules.
+- Main flows.
+- Alternative flows.
+- Error flows.
+- Dependencies with other features.
+- Explicit assumptions.
+- Relevant functional and non-functional requirements.
 
-Los criterios de aceptación deben ser suficientemente concretos para derivar tests a partir de ellos.
+The acceptance criteria must be concrete enough to derive tests from them.
 
 ---
 
-## 5.2 Plan de implementación
+## 5.2 Implementation plan
 
 `02-implementation-plan.md`
 
-Debe describir cómo se implementará la feature.
+It must describe how the feature will be implemented.
 
-Incluir, cuando aplique:
+Include, when it applies:
 
 ### Backend
 
 - Endpoints.
 - Request/response models.
-- Validaciones.
-- Flujo de ejecución.
-- Servicios/use cases.
-- Dominio.
-- Entidades.
-- Repositorios.
-- Persistencia.
-- Transacciones.
-- Integraciones externas.
+- Validations.
+- Execution flow.
+- Services/use cases.
+- Domain.
+- Entities.
+- Repositories.
+- Persistence.
+- Transactions.
+- External integrations.
 - Cache.
-- Manejo de errores.
-- Concurrencia/asíncronía.
-- Tests unitarios.
-- Tests de integración.
-- Consideraciones de seguridad.
-- Consideraciones de performance.
+- Error handling.
+- Concurrency/asynchrony.
+- Unit tests.
+- Integration tests.
+- Security considerations.
+- Performance considerations.
 
 ### Frontend
 
-- Pantallas/componentes.
-- Estructura de componentes.
-- Estado.
+- Screens/components.
+- Component structure.
+- State.
 - Hooks.
-- Llamadas al backend.
-- Manejo de loading/error/empty states.
-- Validaciones.
-- Navegación.
+- Backend calls.
+- Handling of loading/error/empty states.
+- Validations.
+- Navigation.
 - Tests.
-- Accesibilidad básica.
-- Consideraciones de UX relevantes al reto.
+- Basic accessibility.
+- UX considerations relevant to the challenge.
 
-El plan debe identificar archivos/clases/componentes que probablemente serán creados o modificados, sin inventar código innecesario.
+The plan must identify the files/classes/components that will probably be created or modified, without inventing unnecessary code.
 
 ---
 
@@ -271,51 +234,51 @@ El plan debe identificar archivos/clases/componentes que probablemente serán cr
 
 `03-adrs.md`
 
-Documenta únicamente decisiones arquitectónicas relevantes.
+Document only relevant architectural decisions.
 
-Cada ADR debe tener esta estructura. Incluye **mínimo dos opciones reales**; añade una tercera solo si existe de verdad. No inventes alternativas de relleno.
+Each ADR must have this structure. Include **at least two real options**; add a third only if it really exists. Do not invent filler alternatives.
 
 ```markdown
-## ADR-001 — <Título>
+## ADR-001 — <Title>
 
-### Contexto / Problema
+### Context / Problem
 
-¿Qué problema o decisión arquitectónica se necesita resolver?
+What problem or architectural decision needs to be solved?
 
-### Opciones consideradas
+### Options considered
 
-#### Opción A — <nombre>
-- Descripción.
-- Ventajas.
-- Desventajas.
-- Motivo de descarte, si aplica.
+#### Option A — <name>
+- Description.
+- Advantages.
+- Disadvantages.
+- Reason for discarding it, if it applies.
 
-#### Opción B — <nombre>
-- Descripción.
-- Ventajas.
-- Desventajas.
-- Motivo de descarte, si aplica.
+#### Option B — <name>
+- Description.
+- Advantages.
+- Disadvantages.
+- Reason for discarding it, if it applies.
 
-#### Opción C — <nombre> (solo si existe una tercera alternativa real)
-- Descripción.
-- Ventajas.
-- Desventajas.
-- Motivo de descarte, si aplica.
+#### Option C — <name> (only if a real third alternative exists)
+- Description.
+- Advantages.
+- Disadvantages.
+- Reason for discarding it, if it applies.
 
-### Decisión
+### Decision
 
-¿Qué se decidió?
+What was decided?
 
-### Justificación
+### Rationale
 
-¿Por qué esta opción es la más adecuada para este reto?
+Why is this option the most suitable for this challenge?
 
-### Consecuencias
+### Consequences
 
-¿Qué ventajas, costes o trade-offs introduce?
+What advantages, costs or trade-offs does it introduce?
 ```
 
-No generes ADRs artificiales. Solo documenta decisiones que realmente tengan relevancia arquitectónica.
+Do not create artificial ADRs. Only document decisions that really have architectural relevance.
 
 ---
 
@@ -323,62 +286,62 @@ No generes ADRs artificiales. Solo documenta decisiones que realmente tengan rel
 
 `04-tdrs.md`
 
-Los TDR documentan decisiones técnicas de implementación que no necesariamente son arquitectónicas.
+TDRs document implementation technical decisions that are not necessarily architectural.
 
-Ejemplos:
+Examples:
 
 - `CompletableFuture` vs `ForkJoinPool`.
-- `record` vs clase tradicional.
-- Estrategia de serialización.
-- Manejo de excepciones.
-- Estrategia de cache.
-- Estrategia de validación.
-- Librería específica.
-- Estrategia de testing.
-- Configuración técnica de Spring.
-- Decisiones específicas de React.
+- `record` vs traditional class.
+- Serialization strategy.
+- Exception handling.
+- Cache strategy.
+- Validation strategy.
+- A specific library.
+- Testing strategy.
+- Spring technical configuration.
+- React-specific decisions.
 
-Utiliza la misma estructura de los ADR:
+Use the same structure as the ADRs:
 
 ```markdown
-## TDR-001 — <Título>
+## TDR-001 — <Title>
 
-### Contexto / Problema
+### Context / Problem
 
-### Opciones consideradas
+### Options considered
 
-#### Opción A — <nombre>
+#### Option A — <name>
 ...
 
-#### Opción B — <nombre>
+#### Option B — <name>
 ...
 
-#### Opción C — <nombre> (opcional)
+#### Option C — <name> (optional)
 ...
 
-### Decisión
+### Decision
 
-### Justificación
+### Rationale
 
-### Consecuencias
+### Consequences
 ```
 
-La diferencia es:
+The difference is:
 
-- **ADR:** arquitectura/sistema.
-- **TDR:** implementación/decisión técnica.
+- **ADR:** architecture/system.
+- **TDR:** implementation/technical decision.
 
 ---
 
-# 8. Base de datos
+# 8. Database
 
-La base de datos debe vivir dentro de:
+The database documentation must live in:
 
 ```text
 backend/docs/bd/
 ```
 
-Como mínimo:
+At least:
 
 ```text
 backend/docs/bd/
@@ -392,17 +355,17 @@ backend/docs/bd/
 
 `erd.mmd`
 
-Crear un diagrama entidad-relación en Mermaid.
+Create an entity-relationship diagram in Mermaid.
 
-Debe representar:
+It must show:
 
-- Tablas.
-- PK.
-- FK.
-- Relaciones.
-- Cardinalidades relevantes.
+- Tables.
+- PKs.
+- FKs.
+- Relationships.
+- Relevant cardinalities.
 
-Debe mantenerse sincronizado con el DDL.
+It must stay in sync with the DDL.
 
 ---
 
@@ -410,25 +373,25 @@ Debe mantenerse sincronizado con el DDL.
 
 `ddl.sql`
 
-Debe contener la estructura inicial de la base de datos:
+It must contain the initial structure of the database:
 
-- Tablas.
-- PK.
-- FK.
+- Tables.
+- PKs.
+- FKs.
 - Constraints.
-- Índices.
-- Tipos de datos adecuados.
-- Defaults cuando aporten valor.
+- Indexes.
+- Suitable data types.
+- Defaults when they add value.
 
-Buenas prácticas:
+Best practices:
 
-- nombres consistentes;
-- constraints explícitos;
-- integridad referencial;
-- evitar índices innecesarios;
-- evitar normalización excesiva;
-- evitar columnas o tablas sin justificación;
-- evitar lógica duplicada entre aplicación y BD salvo que sea necesario.
+- consistent names;
+- explicit constraints;
+- referential integrity;
+- avoid unnecessary indexes;
+- avoid excessive normalization;
+- avoid columns or tables without a justification;
+- avoid duplicating logic between application and database unless it is necessary.
 
 ---
 
@@ -436,14 +399,14 @@ Buenas prácticas:
 
 `dml.sql`
 
-Debe contener datos mínimos y deterministas para:
+It must contain minimal and deterministic data to:
 
-- probar cada funcionalidad;
-- ejecutar el proyecto localmente;
-- facilitar la demostración del reto;
-- reproducir escenarios relevantes.
+- test each functionality;
+- run the project locally;
+- make the demo of the challenge easier;
+- reproduce relevant scenarios.
 
-No introducir datos innecesarios.
+Do not add unnecessary data.
 
 ---
 
@@ -451,58 +414,58 @@ No introducir datos innecesarios.
 
 `bddr.md`
 
-Documenta decisiones relacionadas con:
+Document decisions related to:
 
-- modelado;
-- normalización/desnormalización;
-- PK/FK;
+- modelling;
+- normalization/denormalization;
+- PKs/FKs;
 - constraints;
-- índices;
-- tipos de datos;
-- relaciones;
-- estrategia de datos iniciales.
+- indexes;
+- data types;
+- relationships;
+- initial data strategy.
 
-Usa la misma estructura de los ADR.
+Use the same structure as the ADRs.
 
-Cada decisión debe explicar de forma sencilla el **por qué** y las alternativas consideradas.
-
----
-
-# 9. Inicialización de la base de datos
-
-El proyecto debe quedar preparado para inicializar la BD automáticamente cuando corresponda.
-
-La solución debe permitir:
-
-1. Levantar PostgreSQL.
-2. Crear/inicializar la estructura.
-3. Cargar datos de prueba.
-4. Arrancar el backend.
-5. Ejecutar el sistema sin pasos manuales innecesarios.
-
-Si se utiliza una estrategia de migraciones, prioriza una solución estándar y simple, por ejemplo Flyway o Liquibase, únicamente si está justificada.
-
-Elige **una única estrategia de migración**; no mezcles mecanismos sin una razón clara.
-
-Los scripts deben ser reproducibles y mantenerse alineados con el modelo documentado.
+Each decision must explain in a simple way the **why** and the alternatives that were considered.
 
 ---
 
-# 10. Docker e infraestructura local
+# 9. Database initialization
 
-El entorno debe poder ejecutarse con Docker Compose.
+The project must be ready to initialize the database automatically when it applies.
 
-Usa:
+The solution must allow you to:
+
+1. Start PostgreSQL.
+2. Create/initialize the structure.
+3. Load test data.
+4. Start the backend.
+5. Run the system without unnecessary manual steps.
+
+If a migration strategy is used, prefer a standard and simple solution, for example Flyway or Liquibase, only if it is justified.
+
+Choose **one single migration strategy**; do not mix mechanisms without a clear reason.
+
+The scripts must be reproducible and stay aligned with the documented model.
+
+---
+
+# 10. Docker and local infrastructure
+
+The environment must be able to run with Docker Compose.
+
+Use:
 
 ```text
 docker compose up --build
 ```
 
-como flujo principal de ejecución.
+as the main way to run it.
 
-Aclaración: los `Dockerfile` construyen las imágenes; **Docker Compose orquesta los múltiples servicios**.
+Note: the `Dockerfile`s build the images; **Docker Compose orchestrates the multiple services**.
 
-La solución debe contemplar, cuando aplique:
+The solution must include, when it applies:
 
 ```text
 backend
@@ -513,59 +476,59 @@ redis
 
 ## PostgreSQL
 
-Actualmente existe un contenedor PostgreSQL ejecutándose en WSL.
+There is currently a PostgreSQL container running in WSL.
 
-No dependas de ese contenedor para que el proyecto sea reproducible.
+Do not depend on that container for the project to be reproducible.
 
-El proyecto debe definir su propio servicio PostgreSQL en Docker Compose, con persistencia mediante volumen.
+The project must define its own PostgreSQL service in Docker Compose, with persistence through a volume.
 
-El usuario podrá levantar PostgreSQL manualmente si desea evitar tiempos de inicialización, pero el proyecto debe quedar preparado para levantar todo desde Compose.
+The user may start PostgreSQL manually to avoid initialization times, but the project must be ready to start everything from Compose.
 
 ## Redis
 
-Redis debe seguir el mismo principio:
+Redis must follow the same principle:
 
-- servicio Docker independiente;
-- configuración simple;
-- persistencia solo si realmente es necesaria;
-- posibilidad de levantarlo manualmente;
-- configuración mediante variables de entorno.
+- independent Docker service;
+- simple configuration;
+- persistence only if it is really needed;
+- possibility of starting it manually;
+- configuration through environment variables.
 
-## Puertos
+## Ports
 
-- Los puertos expuestos al host deben ser configurables mediante variables de entorno (por ejemplo `POSTGRES_HOST_PORT`, `REDIS_HOST_PORT`, `BACKEND_HOST_PORT`, `FRONTEND_HOST_PORT`), con valores por defecto documentados en `.env.example`.
-- Antes de fijar los valores por defecto, verifica qué puertos están ocupados y elige puertos libres si hay conflicto.
-- Dentro de la red de Compose, los servicios se comunican por nombre de servicio y puerto interno, nunca por `localhost`.
-- No detengas, elimines ni reconfigures contenedores o servicios ajenos al proyecto para liberar un puerto.
+- The ports exposed to the host must be configurable through environment variables (for example `POSTGRES_HOST_PORT`, `REDIS_HOST_PORT`, `BACKEND_HOST_PORT`, `FRONTEND_HOST_PORT`), with default values documented in `.env.example`.
+- Before setting the default values, check which ports are in use and choose free ports if there is a conflict.
+- Inside the Compose network, the services talk to each other by service name and internal port, never by `localhost`.
+- Do not stop, remove or reconfigure containers or services that do not belong to the project to free a port.
 
-No conviertas Docker en una solución excesivamente compleja.
+Do not turn Docker into an overly complex solution.
 
 ---
 
 # 11. Dockerfiles
 
-Crear Dockerfiles apropiados para backend y frontend.
+Create suitable Dockerfiles for backend and frontend.
 
-Aplicar buenas prácticas básicas:
+Apply basic best practices:
 
-- imágenes base razonables;
-- multi-stage build cuando aporte valor;
-- imágenes finales pequeñas;
-- usuario no-root cuando sea viable;
+- reasonable base images;
+- multi-stage build when it adds value;
+- small final images;
+- non-root user when it is viable;
 - `.dockerignore`;
-- configuración mediante variables de entorno;
-- no incluir secretos;
-- no acoplar configuraciones específicas de la máquina.
+- configuration through environment variables;
+- no secrets included;
+- no coupling to machine-specific configuration.
 
-No optimizar prematuramente.
+Do not optimize prematurely.
 
 ---
 
-# 12. Configuración
+# 12. Configuration
 
-Toda configuración dependiente del entorno debe externalizarse.
+All environment-dependent configuration must be externalized.
 
-Ejemplos:
+Examples:
 
 ```text
 DATABASE_URL
@@ -576,45 +539,45 @@ REDIS_PORT
 API_URL
 ```
 
-Utiliza `.env.example` para documentar las variables necesarias.
+Use `.env.example` to document the required variables.
 
-Nunca guardar secretos reales en el repositorio.
+Never store real secrets in the repository.
 
-La aplicación debe tener configuraciones diferenciables para desarrollo/local cuando sea necesario, sin crear una arquitectura de configuración innecesariamente compleja.
+The application must have separate configurations for development/local when it is needed, without creating an unnecessarily complex configuration architecture.
 
 ---
 
-# 13. Backend y arquitectura
+# 13. Backend and architecture
 
-Implementa el backend utilizando:
+Implement the backend using:
 
-- Java 17 como baseline, salvo incompatibilidad justificada y previamente aprobada.
+- Java 17 as the baseline, unless there is a justified and previously approved incompatibility.
 - Spring Boot.
 - Maven.
 - Spring REST.
-- REST Client apropiado para la versión de Spring Boot seleccionada cuando existan integraciones externas.
+- The REST client that fits the selected Spring Boot version when there are external integrations.
 - PostgreSQL.
-- Redis cuando el reto lo requiera.
-- Lombok, utilizado de forma moderada.
-- MapStruct para mappings DTO/domain/entity cuando aporte claridad.
+- Redis when the challenge requires it.
+- Lombok, used moderately.
+- MapStruct for DTO/domain/entity mappings when it adds clarity.
 - JUnit 5.
 - Mockito.
-- Validación.
-- Manejo consistente de errores.
-- Logging apropiado.
-- Tests automatizados.
+- Validation.
+- Consistent error handling.
+- Appropriate logging.
+- Automated tests.
 
-## Principios arquitectónicos
+## Architectural principles
 
-La arquitectura debe adherirse a principios de **Clean Architecture**, especialmente:
+The architecture must follow the principles of **Clean Architecture**, especially:
 
-- separación clara de responsabilidades;
-- independencia del dominio respecto a frameworks e infraestructura;
-- dependencia dirigida hacia el interior;
-- componentes desacoplados y testables;
-- detalles de infraestructura reemplazables.
+- clear separation of responsibilities;
+- independence of the domain from frameworks and infrastructure;
+- dependencies pointing inwards;
+- decoupled and testable components;
+- replaceable infrastructure details.
 
-La solución puede utilizar conceptos de **Hexagonal Architecture / Ports and Adapters** cuando aporten valor, por ejemplo:
+The solution can use concepts of **Hexagonal Architecture / Ports and Adapters** when they add value, for example:
 
 ```text
 domain/
@@ -623,7 +586,7 @@ infrastructure/
 interfaces/
 ```
 
-o:
+or:
 
 ```text
 application/
@@ -632,9 +595,9 @@ application/
 │   └── out/
 ```
 
-Sin embargo, **no es obligatorio implementar una versión dogmática de Clean Architecture o Hexagonal Architecture**. La estructura debe ser proporcional a la complejidad real del reto.
+However, **it is not mandatory to implement a dogmatic version of Clean Architecture or Hexagonal Architecture**. The structure must be proportional to the real complexity of the challenge.
 
-Una estructura orientativa podría ser:
+An indicative structure could be:
 
 ```text
 domain/
@@ -657,28 +620,28 @@ interfaces/
     rest/
 ```
 
-No es obligatorio utilizar exactamente esta estructura. Adáptala al problema real.
+It is not mandatory to use exactly this structure. Adapt it to the real problem.
 
-### Reglas
+### Rules
 
-- Aplica las reglas de codificación Java del `CLAUDE.md` global.
-- El dominio no debe depender innecesariamente de Spring, PostgreSQL, Redis, HTTP u otros detalles de infraestructura.
-- Evitar lógica de negocio en controllers.
-- Los use cases/application services deben coordinar la lógica de aplicación.
-- Las implementaciones de infraestructura deben depender de abstracciones cuando esto aporte desacoplamiento real.
-- Evitar entidades de persistencia expuestas directamente como API cuando sea relevante separarlas.
-- Validar inputs.
-- Definir respuestas de error consistentes.
-- Manejar correctamente transacciones.
-- Evitar N+1 queries cuando sea relevante.
-- No agregar capas, interfaces o abstracciones sin responsabilidad real.
-- No introducir Ports/Adapters únicamente para cumplir una checklist.
+- Apply the Java coding rules of the global `CLAUDE.md`.
+- The domain must not depend unnecessarily on Spring, PostgreSQL, Redis, HTTP or other infrastructure details.
+- Avoid business logic in controllers.
+- Use cases/application services must coordinate the application logic.
+- Infrastructure implementations must depend on abstractions when this adds real decoupling.
+- Avoid exposing persistence entities directly as the API when it is relevant to separate them.
+- Validate inputs.
+- Define consistent error responses.
+- Handle transactions correctly.
+- Avoid N+1 queries when it is relevant.
+- Do not add layers, interfaces or abstractions without a real responsibility.
+- Do not introduce Ports/Adapters only to tick a checklist.
 
 ---
 
-# 14. Stack tecnológico y compatibilidad
+# 14. Tech stack and compatibility
 
-Utiliza como baseline:
+Use as the baseline:
 
 - Java 17.
 - Maven.
@@ -691,158 +654,158 @@ Utiliza como baseline:
 - Vite.
 - Yarn.
 
-Antes de implementar:
+Before implementing:
 
-1. Verifica la versión de Java disponible mediante los mecanismos normales del proyecto/entorno.
-2. Reutiliza Java 17 si es compatible.
-3. No instales, actualices ni cambies la versión global de Java.
-4. Selecciona versiones de Spring Boot y dependencias compatibles con Java 17.
-5. Utiliza Maven Wrapper (`mvnw`) para hacer el proyecto reproducible cuando corresponda.
-6. Mantén las versiones y configuraciones dentro del proyecto.
+1. Check the available Java version through the normal mechanisms of the project/environment.
+2. Reuse Java 17 if it is compatible.
+3. Do not install, update or change the global Java version.
+4. Choose versions of Spring Boot and dependencies that are compatible with Java 17.
+5. Use the Maven Wrapper (`mvnw`) to make the project reproducible when it applies.
+6. Keep versions and configuration inside the project.
 
-Si Java 17 resulta incompatible con un requisito real del reto o con una dependencia necesaria, **detente antes de cambiar el entorno y solicita autorización**, explicando el problema y la versión alternativa propuesta.
+If Java 17 turns out to be incompatible with a real requirement of the challenge or with a necessary dependency, **stop before changing the environment and ask for authorization**, explaining the problem and the proposed alternative version.
 
-No sustituyas Maven, Lombok, MapStruct, JUnit 5 o Mockito por alternativas sin una justificación técnica clara y autorización cuando el cambio implique modificar el stack definido.
+Do not replace Maven, Lombok, MapStruct, JUnit 5 or Mockito with alternatives without a clear technical justification, and without authorization when the change modifies the defined stack.
 
-### Uso de dependencias
+### Use of dependencies
 
-No agregues una librería solo porque sea popular o facilite marginalmente una tarea.
+Do not add a library only because it is popular or makes a task marginally easier.
 
-Antes de agregar una dependencia:
+Before adding a dependency:
 
-1. Comprueba si el stack existente ya resuelve el problema.
-2. Evalúa complejidad y mantenimiento.
-3. Si aporta valor real, documenta la decisión cuando sea relevante mediante TDR.
+1. Check whether the existing stack already solves the problem.
+2. Evaluate complexity and maintenance.
+3. If it adds real value, document the decision with a TDR when it is relevant.
 
-Para mappings, utiliza MapStruct cuando existan mappings no triviales.
+For mappings, use MapStruct when there are non-trivial mappings.
 
-Para llamadas HTTP externas, utiliza el REST Client apropiado para la versión de Spring Boot seleccionada. No introduzcas automáticamente Feign, WebClient, RestTemplate u otra alternativa sin evaluar la necesidad y documentar la decisión.
+For external HTTP calls, use the REST client that fits the selected Spring Boot version. Do not automatically introduce Feign, WebClient, RestTemplate or another alternative without evaluating the need and documenting the decision.
 
-Para testing, utiliza JUnit 5 y Mockito como base. No abuses de mocks cuando un test de integración o un objeto real resulte más apropiado.
+For testing, use JUnit 5 and Mockito as the base. Do not overuse mocks when an integration test or a real object is more suitable.
 
 ---
 
 # 15. Frontend
 
-Utiliza:
+Use:
 
 - React.
 - Vite.
 - Yarn.
 
-No existen estándares de codificación frontend definidos (el `CLAUDE.md` global solo cubre Java). Por lo tanto, utiliza una arquitectura deliberadamente sencilla y documenta mediante TDR las convenciones relevantes que adoptes (estructura de carpetas, estilo de componentes, estrategia de testing).
+There are no frontend coding standards defined (the global `CLAUDE.md` only covers Java). So use a deliberately simple architecture and document with TDRs the relevant conventions you adopt (folder structure, component style, testing strategy).
 
-Prioridades:
+Priorities:
 
-1. Claridad.
-2. Componentes pequeños y con responsabilidad clara.
-3. Estado mínimo necesario.
-4. Evitar abstracciones prematuras.
-5. Manejo explícito de loading/error/empty states.
-6. Buenas prácticas básicas de accesibilidad.
-7. Tests de la lógica relevante.
-8. UX suficiente para demostrar correctamente el reto.
+1. Clarity.
+2. Small components with a clear responsibility.
+3. Minimum necessary state.
+4. Avoid premature abstractions.
+5. Explicit handling of loading/error/empty states.
+6. Basic accessibility best practices.
+7. Tests of the relevant logic.
+8. Enough UX to demonstrate the challenge correctly.
 
-No introducir Redux, Zustand, React Query u otras librerías de estado/data fetching salvo que exista una necesidad real y quede documentado mediante TDR.
+Do not introduce Redux, Zustand, React Query or other state/data-fetching libraries unless there is a real need and it is documented with a TDR.
 
 ---
 
 # 16. API
 
-Si el reto expone una API REST:
+If the challenge exposes a REST API:
 
-- mantener endpoints consistentes;
-- utilizar HTTP status codes apropiados;
-- validar requests;
-- definir contratos claros;
-- evitar respuestas inconsistentes;
-- documentar endpoints relevantes.
+- keep endpoints consistent;
+- use appropriate HTTP status codes;
+- validate requests;
+- define clear contracts;
+- avoid inconsistent responses;
+- document the relevant endpoints.
 
-Si OpenAPI/Swagger aporta valor real al reto, puede utilizarse, pero no debe añadirse simplemente por cumplir una checklist.
+If OpenAPI/Swagger adds real value to the challenge, it can be used, but it must not be added just to tick a checklist.
 
 ---
 
 # 17. Testing
 
-Cada feature debe tener una estrategia de testing derivada de sus criterios de aceptación.
+Each feature must have a testing strategy derived from its acceptance criteria.
 
 ### Backend
 
-Priorizar:
+Prioritize:
 
-- Unit tests para lógica de negocio.
-- Integration tests cuando exista interacción real con BD, Redis o componentes externos.
-- Tests de controller/API cuando aporten valor.
+- Unit tests for business logic.
+- Integration tests when there is real interaction with the database, Redis or external components.
+- Controller/API tests when they add value.
 
 ### Frontend
 
-Priorizar:
+Prioritize:
 
-- Tests de comportamiento.
-- Tests de componentes relevantes.
-- Tests de flujos críticos.
+- Behaviour tests.
+- Tests of relevant components.
+- Tests of critical flows.
 
-No perseguir cobertura numérica artificial.
+Do not chase artificial numeric coverage.
 
-El objetivo es demostrar que:
+The goal is to show that:
 
-- el comportamiento principal funciona;
-- las reglas de negocio importantes están protegidas;
-- los casos de error relevantes están cubiertos;
-- los cambios pueden validarse de forma reproducible.
-
----
-
-# 18. Seguridad
-
-Aplicar medidas proporcionales al reto:
-
-- no hardcodear secretos;
-- validar inputs;
-- evitar exposición innecesaria de datos;
-- utilizar configuración externa;
-- manejar errores sin filtrar información sensible;
-- utilizar credenciales de BD separadas de código;
-- revisar CORS cuando corresponda.
-
-No construir un sistema de seguridad empresarial si el reto no lo requiere.
+- the main behaviour works;
+- the important business rules are protected;
+- the relevant error cases are covered;
+- changes can be validated in a reproducible way.
 
 ---
 
-# 19. Observabilidad, logs y errores
+# 18. Security
 
-Implementar únicamente lo necesario para que el sistema sea entendible y diagnosticable.
+Apply measures proportional to the challenge:
+
+- do not hardcode secrets;
+- validate inputs;
+- avoid unnecessary data exposure;
+- use external configuration;
+- handle errors without leaking sensitive information;
+- keep database credentials separate from the code;
+- review CORS when it applies.
+
+Do not build an enterprise security system if the challenge does not require it.
+
+---
+
+# 19. Observability, logs and errors
+
+Implement only what is needed for the system to be understandable and diagnosable.
 
 ## Logging
 
-Utiliza el mecanismo de logging estándar del stack siempre que sea suficiente.
+Use the standard logging mechanism of the stack whenever it is enough.
 
-Los logs deben:
+Logs must:
 
-- utilizar niveles apropiados (`ERROR`, `WARN`, `INFO`, `DEBUG`);
-- aportar información útil para diagnosticar problemas;
-- registrar eventos relevantes del flujo de negocio o infraestructura;
-- evitar ruido y logging excesivo;
-- no registrar passwords, tokens, credenciales ni información sensible;
-- evitar registrar payloads completos salvo que exista una razón concreta;
-- utilizar mensajes consistentes y útiles;
-- mantener suficiente contexto para investigar errores.
+- use appropriate levels (`ERROR`, `WARN`, `INFO`, `DEBUG`);
+- give useful information to diagnose problems;
+- record relevant events of the business or infrastructure flow;
+- avoid noise and excessive logging;
+- not record passwords, tokens, credentials or sensitive information;
+- avoid logging full payloads unless there is a concrete reason;
+- use consistent and useful messages;
+- keep enough context to investigate errors.
 
-Cuando aporte valor sin añadir complejidad innecesaria, utilizar correlation/request IDs para relacionar logs de una misma petición.
+When it adds value without unnecessary complexity, use correlation/request IDs to relate the logs of the same request.
 
-## Errores
+## Errors
 
-- mensajes de error claros;
-- manejo consistente de excepciones;
-- no exponer detalles internos innecesarios;
-- no imprimir secretos;
-- no llenar el código de logs innecesarios.
+- clear error messages;
+- consistent exception handling;
+- do not expose unnecessary internal details;
+- do not print secrets;
+- do not fill the code with unnecessary logs.
 
 ---
 
-# 20. Git y branching
+# 20. Git and branching
 
-Utiliza una estrategia Git Flow simplificada:
+Use a simplified Git Flow strategy:
 
 ```text
 master
@@ -852,16 +815,16 @@ develop
 feature/*
 ```
 
-Reglas:
+Rules:
 
-- `master`: producción/versión entregable.
-- `develop`: integración.
-- `feature/*`: desarrollo de funcionalidades.
-- Las features salen de `develop`.
-- Las features regresan a `develop`.
-- Una vez `develop` esté estable y validado, se integra en `master`.
+- `master`: production/deliverable version.
+- `develop`: integration.
+- `feature/*`: feature development.
+- Features branch off `develop`.
+- Features go back to `develop`.
+- Once `develop` is stable and validated, it is merged into `master`.
 
-Utiliza nombres de ramas claros, por ejemplo:
+Use clear branch names, for example:
 
 ```text
 feature/user-registration
@@ -869,514 +832,514 @@ feature/order-management
 feature/redis-cache
 ```
 
-Los commits deben ser pequeños, coherentes y descriptivos.
+Commits must be small, coherent and descriptive.
 
-No mezclar en un mismo commit cambios funcionales no relacionados.
+Do not mix unrelated functional changes in the same commit.
 
 ---
 
 # 21. Git Worktrees
 
-Utiliza Git worktrees cuando permitan trabajar en paralelo de forma segura, especialmente cuando:
+Use Git worktrees when they allow safe parallel work, especially when:
 
-- existan tareas independientes;
-- haya varios agentes trabajando simultáneamente;
-- se necesite aislar cambios;
-- se quiera evitar conflictos de contexto.
+- there are independent tasks;
+- several agents work at the same time;
+- changes need to be isolated;
+- you want to avoid context conflicts.
 
-No crear worktrees innecesariamente.
+Do not create worktrees unnecessarily.
 
-Reglas:
+Rules:
 
-- Los worktrees se crean a partir de `develop`, una vez exista el commit del bootstrap (Fase 1).
-- El agente principal crea el worktree y entrega su ruta al subagente; el subagente trabaja únicamente dentro de ella.
-- El agente principal integra los cambios del worktree y lo elimina al terminar.
+- Worktrees are created from `develop`, once the bootstrap commit (Phase 1) exists.
+- The main agent creates the worktree and gives its path to the subagent; the subagent only works inside it.
+- The main agent integrates the changes of the worktree and removes it at the end.
 
-Antes de combinar cambios:
+Before merging changes:
 
-1. validar compilación;
-2. ejecutar tests;
-3. revisar conflictos;
-4. revisar cambios inesperados;
-5. comprobar que la documentación siga alineada.
+1. check the build;
+2. run the tests;
+3. review conflicts;
+4. review unexpected changes;
+5. check that the documentation is still aligned.
 
 ---
 
-# 22. Orquestación de subagentes
+# 22. Subagent orchestration
 
-Actúas como **agente principal**: arquitecto del proyecto y responsable de su coherencia global. Delegas ejecución, nunca responsabilidad.
+You act as the **main agent**: architect of the project and responsible for its global coherence. You delegate execution, never responsibility.
 
-## 22.1 Responsabilidades indelegables
+## 22.1 Non-delegable responsibilities
 
-Permanecen siempre bajo tu control directo:
+These always stay under your direct control:
 
-- diseño inicial y decisiones arquitectónicas;
-- contratos entre componentes (API, puertos, interfaces entre capas, contrato backend ↔ frontend);
-- modelo de dominio y modelo de persistencia;
-- coordinación entre features y componentes;
-- debugging complejo que cruce varios componentes;
-- revisión de integración y validación final.
+- initial design and architectural decisions;
+- contracts between components (API, ports, interfaces between layers, backend ↔ frontend contract);
+- domain model and persistence model;
+- coordination between features and components;
+- complex debugging that crosses several components;
+- integration review and final validation.
 
-Puedes apoyarte en un subagente para **investigar o proponer** sobre estos temas, pero la decisión final es tuya (ver 22.5).
+You can rely on a subagent to **research or propose** on these topics, but the final decision is yours (see 22.5).
 
-## 22.2 Cuándo crear un subagente
+## 22.2 When to create a subagent
 
-Delega cuando se cumplan **todas** estas condiciones:
+Delegate when **all** of these conditions are true:
 
-1. La tarea es independiente y puede describirse con un encargo autocontenido.
-2. Importa más el resultado que el proceso para llegar a él.
-3. Ejecutarla en tu contexto lo llenaría de ruido: exploración extensa del repositorio, lectura de muchos archivos, salidas largas de comandos o código repetitivo.
+1. The task is independent and can be described with a self-contained assignment.
+2. The result matters more than the process to get it.
+3. Running it in your context would fill it with noise: extensive exploration of the repository, reading many files, long command output or repetitive code.
 
-No delegues cuando:
+Do not delegate when:
 
-- la tarea depende del contexto acumulado de la sesión y transmitirlo costaría más que hacerla;
-- es tan pequeña que redactar el encargo y revisar el resultado supera el esfuerzo de hacerla tú;
-- su resultado define un contrato, el dominio, la persistencia o la arquitectura (22.1).
+- the task depends on the context built up in the session and passing it on would cost more than doing it;
+- it is so small that writing the assignment and reviewing the result takes more effort than doing it;
+- its result defines a contract, the domain, the persistence or the architecture (22.1).
 
-## 22.3 Selección de modelo
+## 22.3 Model selection
 
-| Modelo | Úsalo cuando | Ejemplos |
+| Model | Use it when | Examples |
 |---|---|---|
-| **Sonnet** | La tarea es acotada, de bajo riesgo y la solución se deriva directamente de una especificación ya decidida. | DTOs; tests derivados de criterios de aceptación ya definidos; componentes simples; configuración; CRUDs sencillos; refactors locales; documentación de decisiones ya tomadas; exploración y búsqueda en el repo; ejecutar suites y resumir fallos. |
-| **Opus** | La tarea es independiente pero exige razonamiento profundo y su proceso no necesita vivir en tu contexto. | Investigar y comparar alternativas para un ADR/TDR/BDDR; analizar un bug complejo aislado; diseñar un algoritmo o mecanismo de concurrencia acotado; optimización no trivial; revisión crítica independiente (code review o segunda opinión de arquitectura). |
+| **Sonnet** | The task is bounded, low-risk, and the solution follows directly from a specification that is already decided. | DTOs; tests derived from already defined acceptance criteria; simple components; configuration; simple CRUDs; local refactors; documentation of decisions already taken; exploring and searching the repo; running suites and summarizing failures. |
+| **Opus** | The task is independent but needs deep reasoning, and its process does not need to live in your context. | Researching and comparing alternatives for an ADR/TDR/BDDR; analyzing an isolated complex bug; designing a bounded algorithm or concurrency mechanism; non-trivial optimization; independent critical review (code review or a second opinion on architecture). |
 
-Regla de desempate: decide por el **coste de un error**. Si un fallo del subagente afectaría a otras partes del sistema o sería difícil de detectar en la revisión, usa Opus o no delegues.
+Tie-break rule: decide by the **cost of a mistake**. If a mistake by the subagent would affect other parts of the system or would be hard to detect in the review, use Opus or do not delegate.
 
-## 22.4 Contrato de delegación
+## 22.4 Delegation contract
 
-Cada encargo a un subagente debe incluir:
+Each assignment to a subagent must include:
 
-- **Contexto mínimo:** referencias a los documentos vigentes (`01-context.md`, ADRs, TDRs, BDDR), no copias completas.
-- **Objetivo** concreto y verificable.
-- **Archivos permitidos**, distinguiendo lectura y escritura.
-- **Criterios de aceptación.**
-- **Restricciones**, incluyendo las decisiones vigentes que no puede reabrir.
-- **Instrucción de escalado:** si necesita tomar una decisión del tipo descrito en 22.5, debe detenerse y devolverla como propuesta con alternativas, sin implementarla.
-- **Formato de retorno obligatorio:**
+- **Minimum context:** references to the current documents (`01-context.md`, ADRs, TDRs, BDDR), not full copies.
+- A concrete and verifiable **goal**.
+- **Allowed files**, separating read and write.
+- **Acceptance criteria.**
+- **Constraints**, including the current decisions it cannot reopen.
+- **Escalation instruction:** if it needs to take a decision of the type described in 22.5, it must stop and return it as a proposal with alternatives, without implementing it.
+- **Mandatory return format:**
 
 ```markdown
-## Resultado
-## Archivos creados / modificados
-## Investigación realizada (resumen: qué analizó, alternativas descartadas, cómo llegó a la solución)
-## Decisiones tomadas (separando las indicadas en el encargo de las propias)
-## Supuestos
-## Validaciones ejecutadas (`<comando>` — PASS/FAIL)
-## Propuestas / dudas escaladas
+## Result
+## Files created / modified
+## Research done (summary: what it analyzed, discarded alternatives, how it reached the solution)
+## Decisions taken (separating those given in the assignment from its own)
+## Assumptions
+## Validations run (`<command>` — PASS/FAIL)
+## Proposals / escalated questions
 ```
 
-## 22.5 Revisión de decisiones de subagentes
+## 22.5 Review of subagent decisions
 
-Las decisiones de un subagente son **propuestas, no hechos consumados**. Nunca asumas automáticamente su decisión.
+The decisions of a subagent are **proposals, not facts**. Never accept its decision automatically.
 
-Requieren tu revisión y aprobación explícita las decisiones que afecten:
+These decisions need your explicit review and approval:
 
-- contratos (API, DTOs públicos, puertos, interfaces entre capas);
-- dominio (entidades, reglas de negocio, invariantes);
-- persistencia (esquema, migraciones, índices, transacciones);
-- arquitectura (estructura de paquetes, capas, patrones);
-- integración entre componentes o servicios externos;
-- dependencias nuevas.
+- contracts (API, public DTOs, ports, interfaces between layers);
+- domain (entities, business rules, invariants);
+- persistence (schema, migrations, indexes, transactions);
+- architecture (package structure, layers, patterns);
+- integration between components or external services;
+- new dependencies.
 
-Para cada decisión revisada comprueba:
+For each reviewed decision, check:
 
-1. **Coherencia** con ADRs, TDRs, BDDR y decisiones previas de otros subagentes.
-2. **Redundancia:** que no duplique ni contradiga algo ya resuelto.
-3. **Alcance:** que no salga del encargo ni del reto.
-4. **Simplicidad:** que no introduzca sobreingeniería.
+1. **Coherence** with ADRs, TDRs, BDDR and previous decisions of other subagents.
+2. **Redundancy:** that it does not duplicate or contradict something already solved.
+3. **Scope:** that it does not go beyond the assignment or the challenge.
+4. **Simplicity:** that it does not introduce over-engineering.
 
-Resultado posible: **Aprobada**, **Aprobada con ajustes** o **Rechazada**. Solo se integra lo aprobado. Las decisiones aprobadas con relevancia arquitectónica, técnica o de BD las formalizas tú en el ADR/TDR/BDDR correspondiente.
+Possible result: **Approved**, **Approved with adjustments** or **Rejected**. Only what is approved is integrated. You formalize the approved decisions with architectural, technical or database relevance in the corresponding ADR/TDR/BDDR.
 
-## 22.6 Ejecución en paralelo
+## 22.6 Parallel execution
 
-- Subagentes que escriban código en paralelo deben trabajar en worktrees separados (sección 21).
-- Dos subagentes nunca escriben sobre el mismo archivo de forma simultánea.
-- Ningún subagente modifica partes del sistema fuera de su alcance.
+- Subagents that write code in parallel must work in separate worktrees (section 21).
+- Two subagents never write the same file at the same time.
+- No subagent changes parts of the system outside its scope.
 
 ---
 
-# 23. Registro de subagentes — `SUB-AGENTS.md`
+# 23. Subagent log — `SUB-AGENTS.md`
 
-Mantén en la raíz del repositorio un archivo `SUB-AGENTS.md` como bitácora de trazabilidad de todo el trabajo delegado.
+Keep a `SUB-AGENTS.md` file in the root of the repository as a traceability log of all delegated work.
 
-Reglas:
+Rules:
 
-- Créalo al lanzar el primer subagente.
-- Registra la entrada **antes** de lanzar el subagente (encargo) y complétala **al recibir** su resultado.
-- Es append-only: no reescribas entradas pasadas, salvo la sección de revisión y el estado en el índice.
-- **Léelo antes de cada nueva delegación** para no repetir trabajo, respetar decisiones ya aprobadas y detectar contradicciones.
-- Resume la investigación; no pegues la salida completa del subagente.
-- Ninguna entrada puede quedar en estado `Pendiente de revisión` al cerrar una feature.
+- Create it when you launch the first subagent.
+- Record the entry **before** launching the subagent (assignment) and complete it **when you receive** its result.
+- It is append-only: do not rewrite past entries, except the review section and the status in the index.
+- **Read it before each new delegation** to avoid repeating work, respect already approved decisions and detect contradictions.
+- Summarize the research; do not paste the full output of the subagent.
+- No entry can stay in the `Pending review` state when a feature is closed.
 
-Estructura:
+Structure:
 
 ```markdown
-# Registro de subagentes
+# Subagent log
 
-## Índice
+## Index
 
-| ID | Fecha | Nombre | Modelo | Feature | Estado de revisión |
+| ID | Date | Name | Model | Feature | Review status |
 |---|---|---|---|---|---|
-| SA-001 | YYYY-MM-DD | <nombre> | Sonnet/Opus | <feature> | Pendiente / Aprobada / Aprobada con ajustes / Rechazada |
+| SA-001 | YYYY-MM-DD | <name> | Sonnet/Opus | <feature> | Pending / Approved / Approved with adjustments / Rejected |
 
 ---
 
-## SA-001 — <Nombre descriptivo del subagente>
+## SA-001 — <Descriptive name of the subagent>
 
-- **Fecha:**
-- **Modelo:** Sonnet | Opus
-- **Feature / rama / worktree:**
-- **Motivo de la delegación y del modelo elegido:**
+- **Date:**
+- **Model:** Sonnet | Opus
+- **Feature / branch / worktree:**
+- **Reason for the delegation and for the chosen model:**
 
-### Encargo
+### Assignment
 
-- **Objetivo:**
-- **Archivos permitidos:**
-- **Criterios de aceptación:**
-- **Restricciones / decisiones vigentes a respetar:**
+- **Goal:**
+- **Allowed files:**
+- **Acceptance criteria:**
+- **Constraints / current decisions to respect:**
 
-### Resultado devuelto
+### Returned result
 
-- **Resumen:**
-- **Archivos creados/modificados:**
-- **Validaciones:** `<comando>` — PASS/FAIL
+- **Summary:**
+- **Files created/modified:**
+- **Validations:** `<command>` — PASS/FAIL
 
-### Resumen de la investigación
+### Research summary
 
-- **Qué analizó o consultó:**
-- **Alternativas consideradas y descartadas:**
-- **Cómo llegó a la solución:**
+- **What it analyzed or consulted:**
+- **Alternatives considered and discarded:**
+- **How it reached the solution:**
 
-### Decisiones del subagente
+### Subagent decisions
 
-| # | Decisión | Tipo | Justificación del subagente |
+| # | Decision | Type | Subagent's justification |
 |---|---|---|---|
-| 1 | | Local / Contrato / Dominio / Persistencia / Arquitectura / Integración / Dependencia | |
+| 1 | | Local / Contract / Domain / Persistence / Architecture / Integration / Dependency | |
 
-### Supuestos y dudas escaladas
+### Assumptions and escalated questions
 
 -
 
-### Revisión del agente principal
+### Main agent review
 
-- **Estado:** Aprobada | Aprobada con ajustes | Rechazada
-- **Coherencia con ADR/TDR/BDDR y decisiones previas:**
-- **Ajustes realizados o motivo de rechazo:**
-- **Formalizado en:** `<ruta del ADR/TDR/BDDR>` (si aplica)
-- **Acciones de seguimiento:**
+- **Status:** Approved | Approved with adjustments | Rejected
+- **Coherence with ADR/TDR/BDDR and previous decisions:**
+- **Adjustments made or reason for rejection:**
+- **Formalized in:** `<path of the ADR/TDR/BDDR>` (if it applies)
+- **Follow-up actions:**
 ```
 
 ---
 
-# 24. Secuencia de implementación por feature
+# 24. Implementation sequence per feature
 
-Para cada feature sigue esta secuencia:
+For each feature, follow this sequence:
 
 ```text
-1. Analizar requisitos
+1. Analyze requirements
        ↓
-2. Definir contexto y criterios de aceptación
+2. Define context and acceptance criteria
        ↓
-3. Diseñar solución
+3. Design the solution
        ↓
-4. Crear/actualizar ADRs, TDRs y BDDR
+4. Create/update ADRs, TDRs and BDDR
        ↓
-5. Revisar modelo de BD
+5. Review the database model
        ↓
-6. Implementar backend
+6. Implement the backend
        ↓
-7. Implementar frontend
+7. Implement the frontend
        ↓
-8. Crear tests
+8. Create tests
        ↓
-9. Ejecutar validaciones
+9. Run validations
        ↓
-10. Actualizar documentación
+10. Update documentation
        ↓
-11. Revisar simplificación / sobreingeniería
+11. Review simplification / over-engineering
        ↓
-12. Preparar commit
+12. Prepare the commit
 ```
 
-No implementes primero y documentes después.
+Do not implement first and document afterwards.
 
-La documentación debe reflejar las decisiones reales tomadas durante la implementación.
+The documentation must reflect the real decisions taken during the implementation.
 
 ---
 
 # 25. Definition of Done
 
-Una feature está terminada únicamente cuando:
+A feature is finished only when:
 
-- [ ] Cumple los criterios de aceptación.
-- [ ] Backend implementado.
-- [ ] Frontend implementado cuando corresponda.
-- [ ] Persistencia implementada cuando corresponda.
-- [ ] Tests relevantes implementados.
-- [ ] Tests ejecutados correctamente.
-- [ ] Errores relevantes gestionados.
-- [ ] Configuración documentada.
-- [ ] ADRs/TDRs/BDDR actualizados cuando corresponda.
-- [ ] ERD, DDL y DML sincronizados.
-- [ ] Docker/Compose actualizado cuando corresponda.
-- [ ] `README.md` raíz actualizado si la feature cambia cómo se ejecuta, configura o prueba el sistema.
-- [ ] No existen secretos en el repositorio.
-- [ ] No existen dependencias innecesarias.
-- [ ] No existen cambios fuera del alcance sin justificación.
-- [ ] Las decisiones de subagentes están revisadas y registradas en `SUB-AGENTS.md`, sin entradas pendientes.
-- [ ] La solución puede explicarse fácilmente en una entrevista técnica.
+- [ ] It meets the acceptance criteria.
+- [ ] The backend is implemented.
+- [ ] The frontend is implemented when it applies.
+- [ ] Persistence is implemented when it applies.
+- [ ] The relevant tests are implemented.
+- [ ] The tests pass.
+- [ ] The relevant errors are handled.
+- [ ] The configuration is documented.
+- [ ] ADRs/TDRs/BDDR are updated when it applies.
+- [ ] ERD, DDL and DML are in sync.
+- [ ] Docker/Compose is updated when it applies.
+- [ ] The root `README.md` is updated if the feature changes how the system is run, configured or tested.
+- [ ] There are no secrets in the repository.
+- [ ] There are no unnecessary dependencies.
+- [ ] There are no out-of-scope changes without a justification.
+- [ ] The subagent decisions are reviewed and recorded in `SUB-AGENTS.md`, with no pending entries.
+- [ ] The solution can be easily explained in a technical interview.
 
 ---
 
-# 26. Validación final
+# 26. Final validation
 
-Antes de considerar terminado el reto debes comprobar:
+Before considering the challenge finished, you must check:
 
 ### Backend
 
-- compilación;
+- build;
 - unit tests;
 - integration tests;
-- configuración;
+- configuration;
 - endpoints;
-- manejo de errores.
+- error handling.
 
 ### Frontend
 
-- instalación;
+- installation;
 - build;
-- tests relevantes;
-- integración con backend;
-- estados loading/error/empty;
-- comportamiento principal.
+- relevant tests;
+- integration with the backend;
+- loading/error/empty states;
+- main behaviour.
 
-### Base de datos
+### Database
 
-- creación limpia;
-- DDL correcto;
-- DML correcto;
+- clean creation;
+- correct DDL;
+- correct DML;
 - constraints;
-- índices;
-- relaciones;
-- inicialización reproducible.
+- indexes;
+- relationships;
+- reproducible initialization.
 
 ### Docker
 
-Validar el flujo:
+Validate the flow:
 
 ```bash
 docker compose up --build
 ```
 
-y comprobar que los servicios puedan comunicarse correctamente.
+and check that the services can communicate correctly.
 
 ### README
 
-Comprobar que, siguiendo únicamente el `README.md` raíz en un clon limpio, es posible levantar y probar la solución.
+Check that, following only the root `README.md` in a clean clone, it is possible to start and test the solution.
 
-### Calidad
+### Quality
 
-Realizar una revisión final buscando:
+Do a final review looking for:
 
-- sobreingeniería;
-- duplicación;
-- complejidad innecesaria;
-- código muerto;
-- dependencias innecesarias;
-- configuración hardcodeada;
-- documentación desactualizada;
-- inconsistencias entre código y diseño;
-- decisiones de subagentes no revisadas o incoherentes entre sí (`SUB-AGENTS.md`).
+- over-engineering;
+- duplication;
+- unnecessary complexity;
+- dead code;
+- unnecessary dependencies;
+- hardcoded configuration;
+- outdated documentation;
+- inconsistencies between code and design;
+- subagent decisions that were not reviewed or are inconsistent with each other (`SUB-AGENTS.md`).
 
 ---
 
-# 27. Trazabilidad
+# 27. Traceability
 
-Mantén trazabilidad:
+Keep traceability:
 
 ```text
-Requisito
+Requirement
    ↓
-Historia de usuario
+User story
    ↓
-Criterio de aceptación
+Acceptance criterion
    ↓
-Diseño
+Design
    ↓
-Implementación
+Implementation
    ↓
 Test
 ```
 
-Cuando sea útil, incluye en la documentación una pequeña matriz de trazabilidad.
+When it is useful, include a small traceability matrix in the documentation.
 
-El objetivo es poder responder durante la entrevista:
+The goal is to be able to answer during the interview:
 
-> "¿Dónde está implementado este requisito y cómo demuestras que funciona?"
+> "Where is this requirement implemented and how do you show that it works?"
 
 ---
 
 # 28. Guardrails
 
-Estas reglas son obligatorias:
+These rules are mandatory:
 
-## Protección del entorno de desarrollo
+## Protection of the development environment
 
-**No modificar ninguna configuración global o externa del PC sin solicitar autorización explícita primero.**
+**Do not change any global or external configuration of the PC without asking for explicit authorization first.**
 
-Esto incluye, entre otros:
+This includes, among others:
 
-- versión o instalación global de Java;
-- Maven global;
-- Node.js / Yarn global;
+- global Java version or installation;
+- global Maven;
+- global Node.js / Yarn;
 - Docker;
 - Docker Desktop;
 - WSL;
-- variables de entorno globales;
-- configuración del shell;
-- configuración del IDE;
-- archivos de configuración globales;
-- servicios del sistema;
-- contenedores existentes que no pertenezcan al proyecto;
-- otros repositorios o proyectos.
+- global environment variables;
+- shell configuration;
+- IDE configuration;
+- global configuration files;
+- system services;
+- existing containers that do not belong to the project;
+- other repositories or projects.
 
-Sí está permitido modificar la configuración **dentro del propio repositorio** cuando sea necesaria para implementar el reto.
+It is allowed to change configuration **inside the repository itself** when it is needed to implement the challenge.
 
-Si una tarea requiere modificar el entorno local, detenerse y explicar:
+If a task needs to change the local environment, stop and explain:
 
-1. qué se necesita cambiar;
-2. por qué es necesario;
-3. qué impacto puede tener;
-4. qué alternativa existe, si existe.
+1. what needs to change;
+2. why it is needed;
+3. what impact it can have;
+4. what alternative exists, if any.
 
-No ejecutar el cambio hasta recibir autorización explícita.
+Do not make the change until you receive explicit authorization.
 
-## Git y datos del proyecto
+## Git and project data
 
-- No hacer `push` a ningún remoto ni configurar remotos sin autorización explícita.
-- No modificar la configuración global de Git (`git config --global`).
-- No ejecutar operaciones destructivas sin autorización: `git reset --hard`, `git push --force`, `git clean -fd`, reescritura de historial o borrado de ramas con cambios sin integrar.
-- No ejecutar `docker compose down -v`, `docker volume rm`, `docker system prune` ni comandos equivalentes que eliminen datos o recursos sin avisar y obtener autorización.
+- Do not `push` to any remote or configure remotes without explicit authorization.
+- Do not change the global Git configuration (`git config --global`).
+- Do not run destructive operations without authorization: `git reset --hard`, `git push --force`, `git clean -fd`, history rewriting, or deleting branches with unmerged changes.
+- Do not run `docker compose down -v`, `docker volume rm`, `docker system prune` or equivalent commands that delete data or resources without warning and getting authorization.
 
-## Reglas generales
+## General rules
 
-1. **No inventar requisitos.**
-2. **No implementar funcionalidades no solicitadas.**
-3. **No modificar la configuración del PC, WSL, Docker, Java, Maven, Node/Yarn o cualquier otro entorno global sin autorización explícita.**
-4. **No introducir dependencias sin justificar su necesidad.**
-5. **No sobreingenierizar.**
-6. **No duplicar lógica entre frontend y backend innecesariamente.**
-7. **No hardcodear secretos.**
-8. **No ignorar errores de compilación o tests.**
-9. **No marcar una tarea como terminada si los tests relevantes fallan.**
-10. **No modificar archivos fuera del alcance de una tarea sin justificarlo.**
-11. **No realizar refactors masivos como parte de una feature pequeña.**
-12. **No sustituir una solución simple por una abstracción genérica prematura.**
-13. **Mantener sincronizados código, tests, documentación y BD.**
-14. **No eliminar comportamiento existente sin comprobar primero su propósito.**
-15. **No utilizar librerías o patrones únicamente porque sean populares.**
-16. **Cada decisión importante debe poder explicarse en términos de trade-offs.**
-17. **Ante incertidumbre relevante, no asumir silenciosamente: documentar el supuesto o solicitar aclaración si es bloqueante.**
-18. **No asumir automáticamente decisiones de subagentes: toda decisión que afecte contratos, dominio, persistencia, arquitectura, integración o dependencias requiere revisión y aprobación del agente principal.**
-19. **No delegar sin registrar el encargo y su resultado en `SUB-AGENTS.md`.**
+1. **Do not invent requirements.**
+2. **Do not implement features that were not requested.**
+3. **Do not change the configuration of the PC, WSL, Docker, Java, Maven, Node/Yarn or any other global environment without explicit authorization.**
+4. **Do not introduce dependencies without justifying the need.**
+5. **Do not over-engineer.**
+6. **Do not duplicate logic between frontend and backend unnecessarily.**
+7. **Do not hardcode secrets.**
+8. **Do not ignore build or test errors.**
+9. **Do not mark a task as finished if the relevant tests fail.**
+10. **Do not change files outside the scope of a task without justifying it.**
+11. **Do not do massive refactors as part of a small feature.**
+12. **Do not replace a simple solution with a premature generic abstraction.**
+13. **Keep code, tests, documentation and database in sync.**
+14. **Do not remove existing behaviour without first checking its purpose.**
+15. **Do not use libraries or patterns only because they are popular.**
+16. **Every important decision must be explainable in terms of trade-offs.**
+17. **With relevant uncertainty, do not assume silently: document the assumption, or ask for clarification if it is blocking.**
+18. **Do not accept subagent decisions automatically: every decision that affects contracts, domain, persistence, architecture, integration or dependencies needs the review and approval of the main agent.**
+19. **Do not delegate without recording the assignment and its result in `SUB-AGENTS.md`.**
 
 ---
 
-# 29. Formato obligatorio de respuesta del agente
+# 29. Mandatory response format of the agent
 
-Después de cada tarea, responde siempre con:
+After each task, always answer with:
 
 ```markdown
-## Resultado
+## Result
 
-<Resumen breve de lo realizado>
+<Short summary of what was done>
 
-## Archivos creados
-
-- `path/to/file`
-- `path/to/file`
-
-## Archivos modificados
+## Files created
 
 - `path/to/file`
 - `path/to/file`
 
-## Decisiones relevantes
+## Files modified
 
-- <Decisión y motivo>
-- <Decisión y motivo>
+- `path/to/file`
+- `path/to/file`
 
-## Tests / Validaciones
+## Relevant decisions
 
-- `<comando>` — PASS/FAIL
-- `<comando>` — PASS/FAIL
+- <Decision and reason>
+- <Decision and reason>
 
-## Subagentes
+## Tests / Validations
 
-- `SA-00X` — <nombre> — <modelo> — <estado de revisión>
+- `<command>` — PASS/FAIL
+- `<command>` — PASS/FAIL
 
-## Pendientes
+## Subagents
 
-- <pendiente, si existe>
+- `SA-00X` — <name> — <model> — <review status>
 
-## Riesgos / Supuestos
+## Pending
 
-- <riesgo o supuesto, si existe>
+- <pending item, if any>
+
+## Risks / Assumptions
+
+- <risk or assumption, if any>
 ```
 
-No incluyas explicaciones extensas si no aportan información nueva.
+Do not include long explanations if they do not add new information.
 
 ---
 
-# 30. Formato para archivos de documentación
+# 30. Format of documentation files
 
-Todos los archivos de documentación deben ser `.md`.
+All documentation files must be `.md`.
 
-Excepciones:
+Exceptions:
 
-- `.sql` para DDL/DML/scripts SQL.
-- `.mmd` para diagramas Mermaid.
+- `.sql` for DDL/DML/SQL scripts.
+- `.mmd` for Mermaid diagrams.
 
-La documentación debe ser:
+The documentation must be:
 
-- concreta;
-- estructurada;
-- técnicamente correcta;
-- fácil de leer;
-- orientada a explicar el "por qué";
-- consistente con la implementación.
+- concrete;
+- structured;
+- technically correct;
+- easy to read;
+- focused on explaining the "why";
+- consistent with the implementation.
 
-Evita documentación genérica o texto que simplemente describa código obvio.
+Avoid generic documentation or text that only describes obvious code.
 
-## README raíz
+## Root README
 
-Debe existir un `README.md` en la raíz, conciso, que incluya:
+There must be a concise `README.md` in the root, which includes:
 
-- qué resuelve la solución (resumen del reto);
-- stack y versiones;
-- requisitos previos;
-- cómo levantar todo con `docker compose up --build` y cómo levantar servicios por separado;
-- variables de entorno (referencia a `.env.example`) y puertos por defecto;
-- cómo ejecutar los tests de backend y frontend;
-- mapa de la documentación (features, ADR/TDR, BD, `SUB-AGENTS.md`);
-- supuestos principales.
+- what the solution solves (summary of the challenge);
+- stack and versions;
+- prerequisites;
+- how to start everything with `docker compose up --build` and how to start the services separately;
+- environment variables (reference to `.env.example`) and default ports;
+- how to run the backend and frontend tests;
+- documentation map (features, ADR/TDR, database, `SUB-AGENTS.md`);
+- main assumptions.
 
-Se crea en la Fase 1 y se mantiene actualizado durante todo el desarrollo.
+It is created in Phase 1 and kept up to date during the whole development.
 
 ---
 
-# 31. Criterio final de éxito
+# 31. Final success criterion
 
-El resultado final debe ser una solución que:
+The final result must be a solution that:
 
-1. Cumpla completamente el reto técnico.
-2. Sea ejecutable localmente.
-3. Sea reproducible mediante Docker Compose.
-4. Tenga backend y frontend claramente estructurados.
-5. Tenga persistencia y cache correctamente integrados cuando sean requeridos.
-6. Tenga tests suficientes para demostrar correctitud.
-7. Tenga documentación técnica completa pero concisa.
-8. Permita explicar cada decisión importante durante una entrevista.
-9. Evite sobreingeniería.
-10. Sea suficientemente limpia como para que otro desarrollador pueda entenderla rápidamente.
+1. Fully meets the technical challenge.
+2. Can be run locally.
+3. Is reproducible with Docker Compose.
+4. Has a clearly structured backend and frontend.
+5. Has persistence and cache correctly integrated when they are required.
+6. Has enough tests to show correctness.
+7. Has complete but concise technical documentation.
+8. Allows explaining every important decision during an interview.
+9. Avoids over-engineering.
+10. Is clean enough for another developer to understand it quickly.
 
-**La solución debe optimizarse para ser correcta, simple, mantenible y defendible técnicamente, no para maximizar la cantidad de tecnología utilizada.**
+**The solution must be optimized to be correct, simple, maintainable and technically defensible, not to maximize the amount of technology used.**
